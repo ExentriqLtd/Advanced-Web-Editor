@@ -1,0 +1,20 @@
+{
+  "name": "advanced-web-editor",
+  "main": "./lib/advanced-web-editor",
+  "version": "0.0.0",
+  "description": "A markdown website editing tool using Git as an underlying tool for publishing",
+  "keywords": [
+    "web",
+    "editor",
+    "git"
+  ],
+  "activationCommands": {
+    "atom-workspace": "advanced-web-editor:toggle"
+  },
+  "repository": "https://github.com/ExentriqLtd/Advanced-Web-Editor",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {}
+}

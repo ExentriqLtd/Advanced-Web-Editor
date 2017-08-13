@@ -1,0 +1,26 @@
+{
+  "context-menu": {
+    "atom-text-editor": [
+      {
+        "label": "Toggle advanced-web-editor",
+        "command": "advanced-web-editor:toggle"
+      }
+    ]
+  },
+  "menu": [
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "advanced-web-editor",
+          "submenu": [
+            {
+              "label": "Toggle",
+              "command": "advanced-web-editor:toggle"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
