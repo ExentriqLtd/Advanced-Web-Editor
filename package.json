@@ -16,5 +16,8 @@
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "cson": "^4.1.0",
+    "git-promise": "^0.3.1"
+  }
 }
