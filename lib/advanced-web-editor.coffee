@@ -6,7 +6,10 @@ module.exports = AdvancedWebEditor =
   modalPanel: null
   subscriptions: null
 
+  initialize: ->
+
   activate: (state) ->
+    console.log "AdvancedWebEditor::activate", state
     @advancedWebEditorView = new AdvancedWebEditorView(state.advancedWebEditorViewState)
     @modalPanel = atom.workspace.addModalPanel(item: @advancedWebEditorView.getElement(), visible: false)
 
@@ -16,6 +19,19 @@ module.exports = AdvancedWebEditor =
 
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:toggle': => @toggle()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:show': => @show()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:hide': => @hide()
+
+    # @subscriptions.add atom.workspace.observeTextEditors (editor) ->
+    #   console.log editor.getPath()
+
+    @subscriptions.add atom.workspace.observeActivePane (pane) ->
+      console.log pane
+
+    @subscriptions.add atom.project.onDidChangePaths (paths) ->
+      console.log "Atom projects path changed", paths
+      console.log atom.project.getRepositories()
+
 
   deactivate: ->
     @modalPanel.destroy()
@@ -29,6 +45,26 @@ module.exports = AdvancedWebEditor =
     console.log 'AdvancedWebEditor was toggled!'
 
     if @modalPanel.isVisible()
-      @modalPanel.hide()
+      @hide()
     else
-      @modalPanel.show()
+      @show()
+
+  hide: ->
+    console.log 'AdvancedWebEditor hidden'
+    @modalPanel.hide()
+
+  show: ->
+    console.log 'AdvancedWebEditor shown'
+    @modalPanel.show()
+
+  isFirstRun: ->
+    console.log "AdvancedWebEditor::isFirstRun"
+    # TODO: implement feature
+    res = true
+    console.log "-> #{res}"
+
+  isWorkInProgress: ->
+    console.log "AdvancedWebEditor::isWorkInProgress"
+    # TODO: implement feature
+    res = false
+    console.log "-> #{res}"

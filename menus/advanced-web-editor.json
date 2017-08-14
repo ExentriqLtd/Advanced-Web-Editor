@@ -12,11 +12,19 @@
       "label": "Packages",
       "submenu": [
         {
-          "label": "advanced-web-editor",
+          "label": "Advanced Web Editor",
           "submenu": [
             {
               "label": "Toggle",
               "command": "advanced-web-editor:toggle"
+            },
+            {
+              "label": "Show",
+              "command": "advanced-web-editor:show"
+            },
+            {
+              "label": "Hide",
+              "command": "advanced-web-editor:hide"
             }
           ]
         }
