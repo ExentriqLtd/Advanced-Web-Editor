@@ -1,15 +1,14 @@
+fs = require 'fs'
+
 module.exports =
 class AdvancedWebEditorView
-  constructor: (serializedState) ->
+  constructor: (serializedState, closeCallback) ->
     # Create root element
     @element = document.createElement('div')
     @element.classList.add('advanced-web-editor')
-
-    # Create message element
-    message = document.createElement('div')
-    message.textContent = "The AdvancedWebEditor package is Alive! It's ALIVE!"
-    message.classList.add('message')
-    @element.appendChild(message)
+    #
+    template = fs.readFileSync __dirname + '/template/configurationForm.html'
+    @element.innerHTML = template
 
   # Returns an object that can be retrieved when package is activated
   serialize: ->

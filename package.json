@@ -11,7 +11,9 @@
   "activationCommands": {
     "atom-workspace": "advanced-web-editor:toggle"
   },
-  "activationHooks": ["core:loaded-shell-environment"],
+  "activationHooks": [
+    "core:loaded-shell-environment"
+  ],
   "repository": "https://github.com/ExentriqLtd/Advanced-Web-Editor",
   "license": "MIT",
   "engines": {

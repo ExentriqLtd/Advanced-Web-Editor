@@ -1,5 +1,6 @@
 AdvancedWebEditorView = require './advanced-web-editor-view'
 {CompositeDisposable} = require 'atom'
+LifeCycle = require './util/lifecycle'
 
 module.exports = AdvancedWebEditor =
   advancedWebEditorView: null
@@ -10,7 +11,7 @@ module.exports = AdvancedWebEditor =
 
   activate: (state) ->
     console.log "AdvancedWebEditor::activate", state
-    @advancedWebEditorView = new AdvancedWebEditorView(state.advancedWebEditorViewState)
+    @advancedWebEditorView = new AdvancedWebEditorView(state.advancedWebEditorViewState, @closeModal)
     @modalPanel = atom.workspace.addModalPanel(item: @advancedWebEditorView.getElement(), visible: false)
 
     # Events subscribed to in atom's system can be easily
@@ -32,6 +33,9 @@ module.exports = AdvancedWebEditor =
       console.log "Atom projects path changed", paths
       console.log atom.project.getRepositories()
 
+    @lifeCycle = new LifeCycle()
+    if !@lifeCycle.isConfigurationValid()
+      console.log "Configuration required"
 
   deactivate: ->
     @modalPanel.destroy()
@@ -57,14 +61,5 @@ module.exports = AdvancedWebEditor =
     console.log 'AdvancedWebEditor shown'
     @modalPanel.show()
 
-  isFirstRun: ->
-    console.log "AdvancedWebEditor::isFirstRun"
-    # TODO: implement feature
-    res = true
-    console.log "-> #{res}"
-
-  isWorkInProgress: ->
-    console.log "AdvancedWebEditor::isWorkInProgress"
-    # TODO: implement feature
-    res = false
-    console.log "-> #{res}"
+  closeModal: ->
+    @modalPanel.close()
