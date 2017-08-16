@@ -30,6 +30,7 @@ class ConfigurationView extends HTMLElement
 
   createFieldRow: (id, type, label) ->
     row = document.createElement("tr")
+    row.classList.add("native-key-bindings") # workaround Atom bug
     row.appendChild @createLabel(id, label)
     row.appendChild @createField(id, type)
     return row
@@ -85,7 +86,7 @@ class ConfigurationView extends HTMLElement
   getValues: () ->
     values = {}
     @fields.forEach (x) ->
-      console.log x
+      # console.log x
       type = x.getAttribute("type")
       values[x.id] = x.value if type in ["text","password"]
       values[x.id] = (x.checked == true) if type == "checkbox"
