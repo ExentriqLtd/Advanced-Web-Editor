@@ -33,27 +33,30 @@ module.exports = AdvancedWebEditor =
     if !@lifeCycle.isConfigurationValid()
       console.log "Configuration required"
 
-    @advancedWebEditorView = new AdvancedWebEditorView(@lifeCycle.getConfiguration(), @saveConfig, @closeModal)
-    @modalPanel = atom.workspace.addModalPanel(item: @advancedWebEditorView.getElement(), visible: false)
-
   deactivate: ->
     @modalPanel.destroy()
     @subscriptions.dispose()
     @advancedWebEditorView.destroy()
 
   serialize: ->
-    advancedWebEditorViewState: @advancedWebEditorView.serialize()
+    # advancedWebEditorViewState: @advancedWebEditorView.serialize()
 
   hideConfigure: ->
     console.log 'AdvancedWebEditor hidden configuration'
-    @modalPanel.hide()
+    @modalPanel.destroy()
 
   configure: ->
     console.log 'AdvancedWebEditor shown configuration'
+    @advancedWebEditorView = new AdvancedWebEditorView(@lifeCycle.getConfiguration(),
+      () =>
+        @saveConfig()
+      () =>
+        @hideConfigure())
+    @modalPanel = atom.workspace.addModalPanel(item: @advancedWebEditorView.getElement(), visible: false)
     @modalPanel.show()
 
   saveConfig: ->
-    console.log "TODO"
-
-  closeModal: ->
-    @modalPanel.close()
+    console.log "Save configuration"
+    confValues = @advancedWebEditorView.readConfiguration()
+    @lifeCycle.getConfiguration().set(confValues).save()
+    @hideConfigure()

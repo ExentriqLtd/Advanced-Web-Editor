@@ -67,10 +67,14 @@ class ConfigurationView extends HTMLElement
   destroy: ->
     @remove() if @parentNode
 
-  readValues: ->
-    return @fields.map (x) -> x.value
+  reset: ->
+    @fields.forEach (x) ->
+      type = x.getAttribute("type")
+      x.value = "" if type in ["text","password"]
+      x.checked = false if type in ["checkbox"]
 
   setValues: (configuration) ->
+    @reset()
     # console.log "ConfigurationView::setValues", configuration
     Object.keys(configuration).forEach (k) =>
       # console.log "Key: ", k, @fields
@@ -81,9 +85,11 @@ class ConfigurationView extends HTMLElement
   getValues: () ->
     values = {}
     @fields.forEach (x) ->
+      console.log x
       type = x.getAttribute("type")
       values[x.id] = x.value if type in ["text","password"]
       values[x.id] = (x.checked == true) if type == "checkbox"
+      console.log values
     return values
 
 module.exports = document.registerElement('awe-configuration-view', prototype: ConfigurationView.prototype, extends: 'div')

@@ -38,3 +38,6 @@ class AdvancedWebEditorView
 
   getElement: ->
     @element
+
+  readConfiguration: ->
+    return @configurationView.getValues()

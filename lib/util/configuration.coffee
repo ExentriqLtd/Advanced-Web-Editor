@@ -27,6 +27,10 @@ class Configuration
       @conf = {}
     return @conf
 
+  set: (c) ->
+    @conf = c
+    return this
+
   isHttp: ()->
     return @conf.repoUrl.startsWith("http")
 
