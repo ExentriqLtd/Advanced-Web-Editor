@@ -3,9 +3,9 @@ CSON = require('cson')
 
 {File, Directory} = require 'atom'
 FILE_PATH = app.getPath("userData") + "/" + "adv-web-editor.cson"
-keys = ["repoUrls", "username", "password", "cloneDir", "advancedMode"]
+keys = ["repoUrl", "username", "password", "cloneDir", "advancedMode"]
 
-module.exports = class Configuration
+class Configuration
 
   constructor: () ->
     @read()
@@ -26,12 +26,6 @@ module.exports = class Configuration
     if !@conf
       @conf = {}
     return @conf
-
-  enumerate: () ->
-    return keys.map k =>
-      return {
-        "#{k}" : @conf[k]
-      }
 
   isHttp: ()->
     return @conf.repoUrl.startsWith("http")
@@ -61,3 +55,5 @@ module.exports = class Configuration
     if i < 0
       return @conf.repoUrl
     return @conf.repoUrl.substring(0, i + 2) + @conf.username + ":" + @conf.password + "@" + @conf.repoUrl.substring(i+2)
+
+module.exports = Configuration

@@ -11,17 +11,13 @@ module.exports = AdvancedWebEditor =
 
   activate: (state) ->
     console.log "AdvancedWebEditor::activate", state
-    @advancedWebEditorView = new AdvancedWebEditorView(state.advancedWebEditorViewState, @closeModal)
-    @modalPanel = atom.workspace.addModalPanel(item: @advancedWebEditorView.getElement(), visible: false)
 
     # Events subscribed to in atom's system can be easily
     # cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
 
     # Register command that toggles this view
-    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:toggle': => @toggle()
-    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:show': => @show()
-    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:hide': => @hide()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:configure': => @configure()
 
     # @subscriptions.add atom.workspace.observeTextEditors (editor) ->
     #   console.log editor.getPath()
@@ -37,6 +33,9 @@ module.exports = AdvancedWebEditor =
     if !@lifeCycle.isConfigurationValid()
       console.log "Configuration required"
 
+    @advancedWebEditorView = new AdvancedWebEditorView(@lifeCycle.getConfiguration(), @saveConfig, @closeModal)
+    @modalPanel = atom.workspace.addModalPanel(item: @advancedWebEditorView.getElement(), visible: false)
+
   deactivate: ->
     @modalPanel.destroy()
     @subscriptions.dispose()
@@ -45,21 +44,16 @@ module.exports = AdvancedWebEditor =
   serialize: ->
     advancedWebEditorViewState: @advancedWebEditorView.serialize()
 
-  toggle: ->
-    console.log 'AdvancedWebEditor was toggled!'
-
-    if @modalPanel.isVisible()
-      @hide()
-    else
-      @show()
-
-  hide: ->
-    console.log 'AdvancedWebEditor hidden'
+  hideConfigure: ->
+    console.log 'AdvancedWebEditor hidden configuration'
     @modalPanel.hide()
 
-  show: ->
-    console.log 'AdvancedWebEditor shown'
+  configure: ->
+    console.log 'AdvancedWebEditor shown configuration'
     @modalPanel.show()
+
+  saveConfig: ->
+    console.log "TODO"
 
   closeModal: ->
     @modalPanel.close()

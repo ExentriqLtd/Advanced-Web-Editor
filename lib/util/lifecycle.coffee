@@ -29,22 +29,27 @@ class LifeCycle
     return @configuration.exists() && @configuration.isValid()
 
   isProjectPathsOpen: () ->
-    openedPath = atom.project.getPaths()
-    projectPaths = getDirectories(@configuration.get("cloneDir"))
+    openedPaths = atom.project.getPaths()
+    # projectPaths = getDirectories(@configuration.get("cloneDir"))
+    projectPath = @configuration.get("cloneDir")
 
-    return existsAllIn(openedPath, projectPaths) && existsAllIn(projectPaths, openedPath)
+    # return existsAllIn(openedPaths, projectPaths) && existsAllIn(projectPaths, openedPaths)
+    return existsDir(projectPath, openedPaths)
 
-  openProjectFolders: () ->
-    openedPath = atom.project.getPaths()
-    projectPaths = getDirectories(@configuration.get("cloneDir"))
+  openProjectFolder: () ->
+    openedPaths = atom.project.getPaths()
+    projectPath = getDirectories(@configuration.get("cloneDir"))
 
-    openedPath.forEach x ->
-      if !existsDir x, projectPaths
+    shouldOpen = true
+
+    openedPaths.forEach x ->
+      if x != projectPath
         atom.project.removePath x
+      else
+        shouldOpen = false
 
-    projectPaths.forEach x ->
-      if !existsDir x, openedPath
-        atom.project.addPath x
+      if shouldOpen
+        atom.project.addPath projectPath
 
   hasUncommittedChanges: () ->
     # TODO: Implement

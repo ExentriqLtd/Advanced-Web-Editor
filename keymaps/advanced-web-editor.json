@@ -1,7 +1,5 @@
 {
   "atom-workspace": {
-    "ctrl-alt-w": "advanced-web-editor:toggle",
-    "ctrl-alt-e": "advanced-web-editor:show",
-    "ctrl-alt-q": "advanced-web-editor:hide"
+    "ctrl-alt-w": "advanced-web-editor:configure"
   }
 }

@@ -2,8 +2,8 @@
   "context-menu": {
     "atom-text-editor": [
       {
-        "label": "Toggle advanced-web-editor",
-        "command": "advanced-web-editor:toggle"
+        "label": "Configure Advanced Web Editor",
+        "command": "advanced-web-editor:configure"
       }
     ]
   },
@@ -15,16 +15,8 @@
           "label": "Advanced Web Editor",
           "submenu": [
             {
-              "label": "Toggle",
-              "command": "advanced-web-editor:toggle"
-            },
-            {
-              "label": "Show",
-              "command": "advanced-web-editor:show"
-            },
-            {
-              "label": "Hide",
-              "command": "advanced-web-editor:hide"
+              "label": "Configure",
+              "command": "advanced-web-editor:configure"
             }
           ]
         }
