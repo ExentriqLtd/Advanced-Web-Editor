@@ -1,10 +1,11 @@
 AdvancedWebEditorView = require './advanced-web-editor-view'
 {CompositeDisposable} = require 'atom'
 LifeCycle = require './util/lifecycle'
+Configuration = require './util/configuration'
 
 module.exports = AdvancedWebEditor =
   advancedWebEditorView: null
-  modalPanel: null
+  panel: null
   subscriptions: null
 
   initialize: ->
@@ -32,9 +33,11 @@ module.exports = AdvancedWebEditor =
     @lifeCycle = new LifeCycle()
     if !@lifeCycle.isConfigurationValid()
       console.log "Configuration required"
+      @configure()
 
   deactivate: ->
-    @modalPanel.destroy()
+    @panel.destroy()
+    @panel = null
     @subscriptions.dispose()
     @advancedWebEditorView.destroy()
 
@@ -43,7 +46,9 @@ module.exports = AdvancedWebEditor =
 
   hideConfigure: ->
     console.log 'AdvancedWebEditor hidden configuration'
-    @modalPanel.destroy()
+    @panel.destroy()
+    @panel = null
+    @lifeCycle.getConfiguration().read()
 
   configure: ->
     console.log 'AdvancedWebEditor shown configuration'
@@ -51,11 +56,19 @@ module.exports = AdvancedWebEditor =
       () => @saveConfig(),
       () => @hideConfigure()
     )
-    @modalPanel = atom.workspace.addModalPanel(item: @advancedWebEditorView.getElement(), visible: false)
-    @modalPanel.show()
+    @panel = atom.workspace.addTopPanel(item: @advancedWebEditorView.getElement(), visible: false) if !@panel?
+    @panel.show()
 
   saveConfig: ->
     console.log "Save configuration"
     confValues = @advancedWebEditorView.readConfiguration()
-    @lifeCycle.getConfiguration().set(confValues).save()
-    @hideConfigure()
+    config = @lifeCycle.getConfiguration()
+    config.set(confValues)
+    validationMessages = config.validateAll().map (k) ->
+      Configuration.reasons[k]
+    if validationMessages.length == 0
+      config.save()
+      @hideConfigure()
+    else
+      validationMessages.forEach (msg) ->
+        atom.notifications.addError(msg)

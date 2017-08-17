@@ -1,3 +1,5 @@
+Configuration = require './configuration.coffee'
+
 class ConfigurationView extends HTMLElement
 
   initialize: ->
@@ -18,11 +20,13 @@ class ConfigurationView extends HTMLElement
     @fields = []
     @rows = []
     # ["repoUrl", "username", "password", "cloneDir", "advancedMode"]
-    @rows.push @createFieldRow("repoUrl", "text", "Project Clone URL")
-    @rows.push @createFieldRow("username", "text", "Username")
-    @rows.push @createFieldRow("password", "password", "Password")
-    @rows.push @createFieldRow("cloneDir", "directory", "Clone Directory")
-    @rows.push @createFieldRow("advancedMode", "checkbox", "Advanced Mode")
+    @rows.push @createFieldRow("repoUrl", "text", Configuration.labels.repoUrl)
+    @rows.push @createFieldRow("fullName", "text", Configuration.labels.fullName)
+    @rows.push @createFieldRow("email", "text", Configuration.labels.email)
+    @rows.push @createFieldRow("username", "text", Configuration.labels.username)
+    @rows.push @createFieldRow("password", "password", Configuration.labels.password)
+    @rows.push @createFieldRow("cloneDir", "directory", Configuration.labels.cloneDir)
+    @rows.push @createFieldRow("advancedMode", "checkbox", Configuration.labels.advancedMode)
 
     @rows.forEach (f) => @tableBody.appendChild f
 
@@ -90,7 +94,7 @@ class ConfigurationView extends HTMLElement
       type = x.getAttribute("type")
       values[x.id] = x.value if type in ["text","password"]
       values[x.id] = (x.checked == true) if type == "checkbox"
-      console.log values
+    # console.log values
     return values
 
 module.exports = document.registerElement('awe-configuration-view', prototype: ConfigurationView.prototype, extends: 'div')

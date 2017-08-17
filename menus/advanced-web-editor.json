@@ -1,26 +1,15 @@
 {
   "context-menu": {
-    "atom-text-editor": [
-      {
-        "label": "Configure Advanced Web Editor",
-        "command": "advanced-web-editor:configure"
-      }
-    ]
+    "atom-text-editor": [{
+      "label": "Configure Advanced Web Editor",
+      "command": "advanced-web-editor:configure"
+    }]
   },
-  "menu": [
-    {
-      "label": "Packages",
-      "submenu": [
-        {
-          "label": "Advanced Web Editor",
-          "submenu": [
-            {
-              "label": "Configure",
-              "command": "advanced-web-editor:configure"
-            }
-          ]
-        }
-      ]
-    }
-  ]
+  "menu": [{
+    "label": "Advanced Web Editor",
+    "submenu": [{
+      "label": "Configure",
+      "command": "advanced-web-editor:configure"
+    }]
+  }]
 }
