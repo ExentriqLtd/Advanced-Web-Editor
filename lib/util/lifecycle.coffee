@@ -1,5 +1,7 @@
 git = require './git'
+path = require 'path'
 Configuration = require './configuration'
+{ Directory } = require 'atom'
 { lstatSync, readdirSync, existsSync } = require('fs')
 { join } = require('path')
 
@@ -21,7 +23,17 @@ existsAllIn = (set1, set2) ->
   .reduce ((a, b) -> a + b), 0
   return count == set2.length
 
-module.exports =
+getRepoName = (uri) ->
+  tmp = uri.split('/')
+  name = tmp[tmp.length-1]
+  # check for the case when user copied from right panel in github with .git ending
+  tmp = name.split('.')
+  [..., last] = tmp
+  if last is 'git'
+    name = tmp[...-1].join('.')
+  else
+    name
+
 class LifeCycle
 
   constructor: () ->
@@ -33,32 +45,35 @@ class LifeCycle
   isConfigurationValid: () ->
     return @configuration.exists() && @configuration.isValid()
 
+  haveToClone: () ->
+    dir = new Directory(@whereToClone())
+    exists = dir.existsSync()
+    isEmpty = dir.getEntriesSync().length == 0
+    return !exists || (exists && isEmpty)
+
   # return actual clone path
   whereToClone: () ->
-    cloneDir = @configuration.get()["cloneDir"]
-    if !existsSync(cloneDir)
-      return cloneDir
-      
-    # should clone if the clone directory is empty
-    # if the directory is not empty, look up for $(cloneDir)/$(repoName)
-    # if this path doesn't exist, then clone there
-    # if it exists, return null
+    conf = @configuration.get()
+    cloneDir = conf["cloneDir"]
+    repoUrl = conf["repoUrl"]
+    repoName = getRepoName repoUrl
+    return path.join(cloneDir, repoName)
 
   isProjectPathsOpen: () ->
     openedPaths = atom.project.getPaths()
     # projectPaths = getDirectories(@configuration.get("cloneDir"))
-    projectPath = @configuration.get("cloneDir")
+    projectPath = @whereToClone()
 
     # return existsAllIn(openedPaths, projectPaths) && existsAllIn(projectPaths, openedPaths)
     return elementInList(projectPath, openedPaths)
 
   openProjectFolder: () ->
     openedPaths = atom.project.getPaths()
-    projectPath = getDirectories(@configuration.get("cloneDir"))
+    projectPath = @whereToClone()
 
     shouldOpen = true
 
-    openedPaths.forEach x ->
+    openedPaths.forEach (x) ->
       if x != projectPath
         atom.project.removePath x
       else
@@ -74,3 +89,5 @@ class LifeCycle
   hasUnpublishedChanges: () ->
     # TODO: Implement
     return false
+
+module.exports = LifeCycle

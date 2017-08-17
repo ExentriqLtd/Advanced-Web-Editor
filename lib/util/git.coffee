@@ -165,6 +165,9 @@ module.exports =
     return callGit "clone " + repo + " " + target, (data) ->
       return parseDefault(data)
 
+  promisedClone: (repo, target) ->
+    return git("clone -q " + repo + " " + target, {cwd: target})
+
   checkout: (branch, remote) ->
     return callGit "checkout #{if remote then '--track ' else ''}#{branch}", (data) ->
       atomRefresh()

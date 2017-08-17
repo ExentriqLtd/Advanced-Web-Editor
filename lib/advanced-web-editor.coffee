@@ -2,6 +2,7 @@ AdvancedWebEditorView = require './advanced-web-editor-view'
 {CompositeDisposable} = require 'atom'
 LifeCycle = require './util/lifecycle'
 Configuration = require './util/configuration'
+git = require './util/git'
 
 module.exports = AdvancedWebEditor =
   advancedWebEditorView: null
@@ -34,6 +35,11 @@ module.exports = AdvancedWebEditor =
     if !@lifeCycle.isConfigurationValid()
       console.log "Configuration required"
       @configure()
+    else
+      if @lifeCycle.haveToClone()
+        @askForClone()
+      else
+        @lifeCycle.openProjectFolder()
 
   deactivate: ->
     @panel.destroy()
@@ -48,7 +54,7 @@ module.exports = AdvancedWebEditor =
     console.log 'AdvancedWebEditor hidden configuration'
     @panel.destroy()
     @panel = null
-    @lifeCycle.getConfiguration().read()
+    @lifeCycle.getConfiguration().read() #reset configuration
 
   configure: ->
     console.log 'AdvancedWebEditor shown configuration'
@@ -69,6 +75,33 @@ module.exports = AdvancedWebEditor =
     if validationMessages.length == 0
       config.save()
       @hideConfigure()
+      if @lifeCycle.haveToClone()
+        @askForClone()
     else
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
+
+  askForClone: () ->
+    atom.confirm
+      message: 'Do you want to clone the repository now?'
+      detailedMessage: 'Your repository will be downloaded.'
+      buttons:
+        Yes: => @doClone()
+        No: -> () -> {}
+
+  doClone: () ->
+    console.log "doClone"
+    configuration = @lifeCycle.getConfiguration().get()
+    git.promisedClone configuration["repoUrl"], @lifeCycle.whereToClone()
+      .then (output) ->
+        console.log output
+        atom.notifications.addSuccess("Repository cloned succesfully")
+        @lifeCycle.openProjectFolder()
+      .fail (e) =>
+        console.log e
+        atom.confirm
+          message: 'Error occurred'
+          detailedMessage: "An error occurred during git clone:\n#{e.message}\n\nYou may want to try again or check out your configuration."
+          buttons:
+            Configure: => @configure()
+            Retry: => @doClone()
