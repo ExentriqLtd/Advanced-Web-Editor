@@ -48,10 +48,9 @@ module.exports = AdvancedWebEditor =
   configure: ->
     console.log 'AdvancedWebEditor shown configuration'
     @advancedWebEditorView = new AdvancedWebEditorView(@lifeCycle.getConfiguration(),
-      () =>
-        @saveConfig()
-      () =>
-        @hideConfigure())
+      () => @saveConfig(),
+      () => @hideConfigure()
+    )
     @modalPanel = atom.workspace.addModalPanel(item: @advancedWebEditorView.getElement(), visible: false)
     @modalPanel.show()
 
