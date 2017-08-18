@@ -156,9 +156,9 @@ module.exports = AdvancedWebEditor =
 
   checkUnpublishedChanges: () ->
     console.log "checkUnpublishedChanges"
-    #TODO: check project index if more than one directory is active
-    git.setProjectIndex 0
+    git.setProjectIndex @lifeCycle.indexOfProject()
     return git.promisedUnpushedCommits(@lifeCycle.whereToClone())
 
   doSaveOrPublish: (action) ->
+    #TODO: implement
     atom.notifications.addWarning("#{action} to be implemented")

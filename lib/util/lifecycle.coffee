@@ -96,4 +96,17 @@ class LifeCycle
     # TODO: Implement
     return false
 
+  indexOfProject: () ->
+    dirs = atom.project.getDirectories()
+    dir = @whereToClone()
+    i = 0
+    for d in dirs
+      p = d.path
+      if p == dir
+        # console.log "Index is #{i}"
+        return i
+      i++
+    return -1
+
+
 module.exports = LifeCycle
