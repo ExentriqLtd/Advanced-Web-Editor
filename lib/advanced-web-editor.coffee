@@ -45,7 +45,7 @@ module.exports = AdvancedWebEditor =
           .then (state) =>
             if state
               return {
-                state: "uncommitted"
+                state: "unsaved"
               }
             else
               @checkUnpublishedChanges()
@@ -60,11 +60,22 @@ module.exports = AdvancedWebEditor =
                     return{
                       state: "ok"
                     }
-          .then (state) ->
+          .then (state) =>
             console.log state
-            #TODO: handle state
-            noop = () ->
-              return
+            action = 'commit' if state.state == 'unsaved'
+            action = 'publish' if state.state == 'unpublished'
+            branches = ''
+            branches = "Involved branches: " + state.branches.join(",") + ". " if state.branches?
+            if state != "ok"
+              atom.confirm
+                message: "Detected #{state.state} changes."
+                detailedMessage: "#{branches}Do you want to #{action} them now?"
+                buttons:
+                  Yes: () =>
+                    console.log this
+                    @doSaveOrPublish(action)
+                  No: -> #do Nothing
+
           .fail (e) ->
             console.log e.message, e.stdout
             #TODO: handle exception
@@ -74,7 +85,7 @@ module.exports = AdvancedWebEditor =
 
   deactivate: ->
     @subscriptions.dispose()
-    @advancedWebEditorView.destroy()
+    @advancedWebEditorView?.destroy()
     @panel?.destroy()
     @panel = null
 
@@ -148,3 +159,6 @@ module.exports = AdvancedWebEditor =
     #TODO: check project index if more than one directory is active
     git.setProjectIndex 0
     return git.promisedUnpushedCommits(@lifeCycle.whereToClone())
+
+  doSaveOrPublish: (action) ->
+    atom.notifications.addWarning("#{action} to be implemented")
