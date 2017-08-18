@@ -73,10 +73,10 @@ module.exports = AdvancedWebEditor =
 
 
   deactivate: ->
-    @panel.destroy()
-    @panel = null
     @subscriptions.dispose()
     @advancedWebEditorView.destroy()
+    @panel?.destroy()
+    @panel = null
 
   serialize: ->
     # advancedWebEditorViewState: @advancedWebEditorView.serialize()
@@ -85,7 +85,7 @@ module.exports = AdvancedWebEditor =
     console.log 'AdvancedWebEditor hidden configuration'
     @panel.destroy()
     @panel = null
-    @lifeCycle.getConfiguration().read() #reset configuration
+    @lifeCycle.reloadConfiguration() #reset configuration
 
   configure: ->
     console.log 'AdvancedWebEditor shown configuration'
@@ -104,7 +104,7 @@ module.exports = AdvancedWebEditor =
     validationMessages = config.validateAll().map (k) ->
       Configuration.reasons[k]
     if validationMessages.length == 0
-      config.save()
+      @lifeCycle.saveConfiguration()
       @hideConfigure()
       if @lifeCycle.haveToClone()
         @askForClone()

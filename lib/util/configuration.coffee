@@ -64,18 +64,26 @@ class Configuration
     console.log "AdvancedWebEditor::read", FILE_PATH
     @confFile = new File(FILE_PATH)
     if @exists()
-      @conf = CSON.parseFile(FILE_PATH)
-      console.log @conf
+      try
+        @conf = CSON.parseCSONFile(FILE_PATH)
+        # console.log "Read configuration: ", @conf
+      catch error
+        console.warn "Invalid configuration detected"
+        @conf = null
     else
+      @confFile.create()
       @conf = null
+      return @conf
 
   get: () ->
     if !@conf
       @conf = {}
+    # console.log "configuration::get", @conf
     return @conf
 
   set: (c) ->
     @conf = c
+    console.log "configuration::set", @conf
     return this
 
   isHttp: ()->
@@ -84,8 +92,9 @@ class Configuration
   save: () ->
     console.log "AdvancedWebEditor::save", FILE_PATH
     s = CSON.stringify(@conf)
-    @confFile.create().then =>
-      @confFile.write(s)
+    #@confFile.create().then =>
+    @confFile.writeSync(s)
+    console.log "configuration::save", @conf
 
   isValid: () ->
     allKeys = @conf && Object.keys(@conf).filter (k) ->

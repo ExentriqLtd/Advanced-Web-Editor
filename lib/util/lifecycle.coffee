@@ -42,6 +42,12 @@ class LifeCycle
   getConfiguration: () ->
     return @configuration
 
+  saveConfiguration: () ->
+    @configuration.save()
+
+  reloadConfiguration: () ->
+    return @configuration.read()
+
   isConfigurationValid: () ->
     return @configuration.exists() && @configuration.isValid()
 
