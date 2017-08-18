@@ -83,7 +83,7 @@ class Configuration
 
   set: (c) ->
     @conf = c
-    console.log "configuration::set", @conf
+    # console.log "configuration::set", @conf
     return this
 
   isHttp: ()->
@@ -94,7 +94,7 @@ class Configuration
     s = CSON.stringify(@conf)
     #@confFile.create().then =>
     @confFile.writeSync(s)
-    console.log "configuration::save", @conf
+    # console.log "configuration::save", @conf
 
   isValid: () ->
     allKeys = @conf && Object.keys(@conf).filter (k) ->
