@@ -31,6 +31,7 @@ module.exports = AdvancedWebEditor =
       console.log "Atom projects path changed", paths
       console.log atom.project.getRepositories()
 
+    # Check configuration first
     @lifeCycle = new LifeCycle()
     if !@lifeCycle.isConfigurationValid()
       console.log "Configuration required"
@@ -40,6 +41,36 @@ module.exports = AdvancedWebEditor =
         @askForClone()
       else
         @lifeCycle.openProjectFolder()
+        @checkUncommittedChanges()
+          .then (state) =>
+            if state
+              return {
+                state: "uncommitted"
+              }
+            else
+              @checkUnpublishedChanges()
+                .then (unpublishedBranches) ->
+                  console.log unpublishedBranches
+                  if unpublishedBranches.length > 0
+                    return {
+                      state: "unpublished"
+                      branches: unpublishedBranches
+                    }
+                  else
+                    return{
+                      state: "ok"
+                    }
+          .then (state) ->
+            console.log state
+            #TODO: handle state
+            noop = () ->
+              return
+          .fail (e) ->
+            console.log e.message, e.stdout
+            #TODO: handle exception
+            noop = () ->
+              return
+
 
   deactivate: ->
     @panel.destroy()
@@ -93,7 +124,7 @@ module.exports = AdvancedWebEditor =
     console.log "doClone"
     configuration = @lifeCycle.getConfiguration().get()
     git.promisedClone configuration["repoUrl"], @lifeCycle.whereToClone()
-      .then (output) ->
+      .then (output) =>
         console.log output
         atom.notifications.addSuccess("Repository cloned succesfully")
         @lifeCycle.openProjectFolder()
@@ -101,7 +132,19 @@ module.exports = AdvancedWebEditor =
         console.log e
         atom.confirm
           message: 'Error occurred'
-          detailedMessage: "An error occurred during git clone:\n#{e.message}\n\nYou may want to try again or check out your configuration."
+          detailedMessage: "An error occurred during git clone:\n#{e.message}\n#{e.stdout}\n\nYou may want to try again or check out your configuration."
           buttons:
             Configure: => @configure()
             Retry: => @doClone()
+
+  checkUncommittedChanges: () ->
+    console.log "checkUncommittedChanges"
+    return git.promisedStatus(@lifeCycle.whereToClone())
+      .then (output) ->
+        return output && output.length > 0
+
+  checkUnpublishedChanges: () ->
+    console.log "checkUnpublishedChanges"
+    #TODO: check project index if more than one directory is active
+    git.setProjectIndex 0
+    return git.promisedUnpushedCommits(@lifeCycle.whereToClone())

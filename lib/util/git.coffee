@@ -165,9 +165,6 @@ module.exports =
     return callGit "clone " + repo + " " + target, (data) ->
       return parseDefault(data)
 
-  promisedClone: (repo, target) ->
-    return git("clone -q " + repo + " " + target, {cwd: target})
-
   checkout: (branch, remote) ->
     return callGit "checkout #{if remote then '--track ' else ''}#{branch}", (data) ->
       atomRefresh()
@@ -267,6 +264,28 @@ module.exports =
 
   status: ->
     return callGit 'status --porcelain --untracked-files=all', parseStatus
+
+  promisedClone: (repo, target) ->
+    return git("clone -q " + repo + " " + target, {cwd: target})
+
+  promisedStatus: (target) ->
+    return git 'status --porcelain --untracked-files=all', {cwd: target}
+
+  promisedUnpushedCommitBranch: (branch, target) ->
+    return git("log origin/#{branch}..#{branch} --oneline", {cwd: target})
+      .then (output) ->
+        return output != ""
+
+  promisedUnpushedCommits: (target) ->
+    # get all local branches
+    return getBranches().then (branches) =>
+      return q.all(branches.local.map((branch) =>
+        return @promisedUnpushedCommitBranch(branch, target)
+          .then (hasCommits) ->
+            return if hasCommits then branch else undefined
+            )).then (branches)->
+              return branches.filter (x) -> x
+
 
   tag: (name,href,msg) ->
     return callGit "tag -a #{name} -m '#{msg}' #{href}", (data) ->
