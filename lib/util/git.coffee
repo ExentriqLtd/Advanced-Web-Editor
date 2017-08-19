@@ -154,7 +154,7 @@ module.exports =
       return parseDefault(data)
 
   commit: (message) ->
-    message = message or Date.now()
+    message = message or ""+Date.now()
     message = message.replace(/"/g, '\\"')
 
     return callGit "commit --allow-empty-message -m \"#{message}\"", (data) ->

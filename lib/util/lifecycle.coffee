@@ -108,5 +108,28 @@ class LifeCycle
       i++
     return -1
 
+  doCommit: () ->
+    git.setProjectIndex @indexOfProject()
+
+    return git.status().then (files) ->
+      return files
+    .then (files) ->
+      toAdd = files.filter (f) ->
+        f.type != "deleted"
+      .map (f) -> f.name
+      git.add(toAdd)
+      return files
+    .then (files) ->
+      toRemove = files.filter (f) ->
+        f.type == "deleted"
+      .map (f) -> f.name
+
+      git.remove(toRemove)
+    .then -> git.commit()
+    .then -> atom.notifications.addSuccess("Changes have been saved succesfully. Publish them when you are ready.")
+
+  doPublish: () ->
+    git.setProjectIndex @indexOfProject()
+
 
 module.exports = LifeCycle

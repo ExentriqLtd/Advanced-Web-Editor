@@ -160,5 +160,7 @@ module.exports = AdvancedWebEditor =
     return git.promisedUnpushedCommits(@lifeCycle.whereToClone())
 
   doSaveOrPublish: (action) ->
-    #TODO: implement
-    atom.notifications.addWarning("#{action} to be implemented")
+    if action == "commit"
+      @lifeCycle.doCommit()
+    else if action == "publish"
+      @lifeCycle.doPublish()
