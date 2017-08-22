@@ -62,25 +62,29 @@ module.exports = AdvancedWebEditor =
                     }
           .then (state) =>
             console.log state
-            action = 'commit' if state.state == 'unsaved'
-            action = 'publish' if state.state == 'unpublished'
-            branches = ''
-            branches = "Involved branches: " + state.branches.join(",") + ". " if state.branches?
-            if state != "ok"
-              atom.confirm
-                message: "Detected #{state.state} changes."
-                detailedMessage: "#{branches}Do you want to #{action} them now?"
-                buttons:
-                  Yes: () =>
-                    console.log this
-                    @doSaveOrPublish(action)
-                  No: -> #do Nothing
+            if state.state != "ok"
+              action = 'commit' if state.state == 'unsaved'
+              action = 'publish' if state.state == 'unpublished'
+              branches = ''
+              branches = "Involved branches: " + state.branches.join(",") + ".\n" if state.branches?
+              if state != "ok"
+                atom.confirm
+                  message: "Detected #{state.state} changes."
+                  detailedMessage: "#{branches}Do you want to #{action} them now?"
+                  buttons:
+                    Yes: () =>
+                      console.log this
+                      @doSaveOrPublish(action)
+                    'Keep editing': -> #do Nothing
+            else
+              git.checkout "develop"
+                .then () ->
+                  git.pull()
 
           .fail (e) ->
             console.log e.message, e.stdout
-            #TODO: handle exception
-            noop = () ->
-              return
+            atom.notifications.addError "Error occurred",
+              description: e.message + "\n" + e.stdout
 
 
   deactivate: ->

@@ -1,5 +1,6 @@
 fs = require 'fs'
 path = require 'path'
+moment = require 'moment'
 
 git = require 'git-promise'
 q = require 'q'
@@ -154,7 +155,7 @@ module.exports =
       return parseDefault(data)
 
   commit: (message) ->
-    message = message or ""+Date.now()
+    message = message or moment().format("MMM DD YYYY")
     message = message.replace(/"/g, '\\"')
 
     return callGit "commit --allow-empty-message -m \"#{message}\"", (data) ->
@@ -286,6 +287,8 @@ module.exports =
             )).then (branches)->
               return branches.filter (x) -> x
 
+  pushAll: () ->
+    return git "-c push.default=simple push --all origin --porcelain", {cwd: cwd}
 
   tag: (name,href,msg) ->
     return callGit "tag -a #{name} -m '#{msg}' #{href}", (data) ->

@@ -130,6 +130,7 @@ class LifeCycle
 
   doPublish: () ->
     git.setProjectIndex @indexOfProject()
+    return git.pushAll()
 
 
 module.exports = LifeCycle
