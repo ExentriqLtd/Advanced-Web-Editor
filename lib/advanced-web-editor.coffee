@@ -77,9 +77,10 @@ module.exports = AdvancedWebEditor =
                       @doSaveOrPublish(action)
                     'Keep editing': -> #do Nothing
             else
-              git.checkout "develop"
-                .then () ->
-                  git.pull()
+              @lifeCycle.updateDevelop()
+              @lifeCycle.suggestNewBranchName()
+                .then (branch) -> atom.notifications.addInfo "TODO: create branch "+ branch
+                .fail (e) -> console.log e
 
           .fail (e) ->
             console.log e.message, e.stdout

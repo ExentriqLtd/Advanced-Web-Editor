@@ -1,9 +1,12 @@
 git = require './git'
 path = require 'path'
+moment = require 'moment'
+
 Configuration = require './configuration'
 { Directory } = require 'atom'
 { lstatSync, readdirSync, existsSync } = require('fs')
 { join } = require('path')
+branchRegex = /\/feature\/(\d+)\/(\w+)\/(\d+)/
 
 isDirectory = (source) ->
   try
@@ -132,5 +135,46 @@ class LifeCycle
     git.setProjectIndex @indexOfProject()
     return git.pushAll()
 
+  updateDevelop: () ->
+    console.log "Update develop"
+    return git.checkout "develop"
+      .then () ->
+        git.pull()
+
+  getBranchesByUser: (username) ->
+    return git.getBranches().then (branches) ->
+      # console.log branches
+      branches.remote.filter (b) -> b.indexOf("/#{username}/") >= 0
+
+  suggestNewBranchName: () ->
+    console.log "suggestNewBranchName"
+    username = @configuration.get()["username"]
+    return @getBranchesByUser(username).then (userBranches) ->
+      months = userBranches
+        .map (b) ->
+          m = b.match branchRegex
+          return if m? then Number.parseInt(m[1]) else undefined #month
+        .filter (x) -> x
+
+      now = moment()
+      thisMonth = now.format("YYYYMM")
+      maxMonth = if months.length > 0 then String(Math.max.apply(months)) else thisMonth
+
+      monthAsDate = moment(maxMonth, "YYYYMM")
+      thisMonthAsDate = moment(thisMonth, "YYYYMM")
+      if monthAsDate.diff(thisMonthAsDate) < 0
+        maxMonth = thisMonth # it will be the first branch this month
+
+      # retain only maxMonth branch and pick maximum
+      numbers = userBranches
+        .filter (b) -> b.indexOf(maxMonth) >= 0
+        .map (b) ->
+          n = b.match branchRegex
+          return if m? then Number.parseInt(m[3]) else undefined # final number
+        .filter (x) -> x
+
+      max = if numbers.length > 0 then  Math.max.apply(numbers) else 0
+
+      return "/feature/#{maxMonth}/#{username}/#{max + 1}"
 
 module.exports = LifeCycle
