@@ -23,5 +23,12 @@
     "cson": "^4.1.0",
     "git-promise": "^0.3.1",
     "moment": "^2.18.1"
+  },
+  "consumedServices": {
+    "tool-bar": {
+      "versions": {
+        "^0 || ^1": "consumeToolBar"
+      }
+    }
   }
 }

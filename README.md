@@ -4,6 +4,10 @@
 An Atom package to provide a markdown website editing tool using Git as an
 underlying tool for publishing
 
+## Prerequisites
+
+[Atom tool-bar package](https://atom.io/packages/tool-bar)
+
 ## Install
 `npm install && install.sh`
 

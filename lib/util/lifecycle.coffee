@@ -82,14 +82,15 @@ class LifeCycle
 
     shouldOpen = true
 
-    openedPaths.forEach (x) ->
-      if x != projectPath
-        atom.project.removePath x
-      else
-        shouldOpen = false
+    if !@configuration.get()["advancedMode"]
+      openedPaths.forEach (x) ->
+        if x != projectPath
+          atom.project.removePath x
+        else
+          shouldOpen = false
 
-      if shouldOpen
-        atom.project.addPath projectPath
+    if shouldOpen
+      atom.project.addPath projectPath
 
   hasUncommittedChanges: () ->
     # TODO: Implement

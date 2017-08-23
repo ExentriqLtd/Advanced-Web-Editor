@@ -1,13 +1,41 @@
-AdvancedWebEditorView = require './advanced-web-editor-view'
+ConfigurationView = require './advanced-web-editor-view'
 {CompositeDisposable} = require 'atom'
 LifeCycle = require './util/lifecycle'
 Configuration = require './util/configuration'
 git = require './util/git'
 
 module.exports = AdvancedWebEditor =
-  advancedWebEditorView: null
+  configurationView: null
   panel: null
   subscriptions: null
+
+  consumeToolBar: (getToolBar) ->
+    toolBar = getToolBar('advanced-web-editor')
+
+    #TODO: set state
+    toolBar.addButton
+      icon: 'gear',
+      callback: 'advanced-web-editor:configure',
+      tooltip: 'Configure'
+
+    toolBar.addSpacer()
+
+    toolBar.addButton
+      icon: 'zap',
+      callback: 'advanced-web-editor:start',
+      tooltip: 'Start Editing'
+
+    toolBar.addButton
+      icon: 'database',
+      callback: 'advanced-web-editor:save',
+      tooltip: 'Save Locally'
+
+    toolBar.addButton
+      icon: 'cloud-upload',
+      callback: 'advanced-web-editor:publish',
+      tooltip: 'Publish'
+
+    console.log "Toolbar", toolBar
 
   initialize: ->
 
@@ -20,6 +48,11 @@ module.exports = AdvancedWebEditor =
 
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:configure': => @configure()
+
+    # Register publishing commands
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:start': => @commandStartEditing()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:save': => @commandSaveLocally()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:publish': => @commandPublish()
 
     # @subscriptions.add atom.workspace.observeTextEditors (editor) ->
     #   console.log editor.getPath()
@@ -90,12 +123,14 @@ module.exports = AdvancedWebEditor =
 
   deactivate: ->
     @subscriptions.dispose()
-    @advancedWebEditorView?.destroy()
+    @configurationView?.destroy()
     @panel?.destroy()
     @panel = null
+    @toolBar?.removeItems()
+    @toolBar = null
 
   serialize: ->
-    # advancedWebEditorViewState: @advancedWebEditorView.serialize()
+    # advancedWebEditorViewState: @configurationView.serialize()
 
   hideConfigure: ->
     console.log 'AdvancedWebEditor hidden configuration'
@@ -105,16 +140,16 @@ module.exports = AdvancedWebEditor =
 
   configure: ->
     console.log 'AdvancedWebEditor shown configuration'
-    @advancedWebEditorView = new AdvancedWebEditorView(@lifeCycle.getConfiguration(),
+    @configurationView = new ConfigurationView(@lifeCycle.getConfiguration(),
       () => @saveConfig(),
       () => @hideConfigure()
     )
-    @panel = atom.workspace.addTopPanel(item: @advancedWebEditorView.getElement(), visible: false) if !@panel?
+    @panel = atom.workspace.addTopPanel(item: @configurationView.getElement(), visible: false) if !@panel?
     @panel.show()
 
   saveConfig: ->
     console.log "Save configuration"
-    confValues = @advancedWebEditorView.readConfiguration()
+    confValues = @configurationView.readConfiguration()
     config = @lifeCycle.getConfiguration()
     config.set(confValues)
     validationMessages = config.validateAll().map (k) ->
@@ -169,3 +204,12 @@ module.exports = AdvancedWebEditor =
       @lifeCycle.doCommit()
     else if action == "publish"
       @lifeCycle.doPublish()
+
+  commandStartEditing: () ->
+    console.log "Command: Start Editing"
+
+  commandSaveLocally: () ->
+    console.log "Command: Save Locally"
+
+  commandPublish: () ->
+    console.log "Command: Publish"

@@ -1,6 +1,6 @@
 Configuration = require './configuration.coffee'
 
-class ConfigurationView extends HTMLElement
+class ConfigurationFormView extends HTMLElement
 
   initialize: ->
     @classList.add("awe-configuration")
@@ -97,4 +97,4 @@ class ConfigurationView extends HTMLElement
     # console.log values
     return values
 
-module.exports = document.registerElement('awe-configuration-view', prototype: ConfigurationView.prototype, extends: 'div')
+module.exports = document.registerElement('awe-configuration-view', prototype: ConfigurationFormView.prototype, extends: 'div')

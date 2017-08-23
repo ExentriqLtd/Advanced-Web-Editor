@@ -1,17 +1,17 @@
 fs = require 'fs'
-ConfigurationView = require './util/configuration-view'
+ConfigurationFormView = require './util/configuration-form-view'
 
 module.exports =
-class AdvancedWebEditorView
+class ConfigurationView
   constructor: (configuration, saveCallback, cancelCallback) ->
     # Create root element
     @element = document.createElement('div')
     @element.classList.add('advanced-web-editor')
 
-    @configurationView = new ConfigurationView()
-    @configurationView.initialize()
-    @configurationView.setValues configuration.get() if configuration?
-    @element.appendChild @configurationView
+    @form = new ConfigurationFormView()
+    @form.initialize()
+    @form.setValues configuration.get() if configuration?
+    @element.appendChild @form
     @element.appendChild document.createElement('hr')
 
     buttonsDiv = document.createElement('div')
@@ -40,4 +40,4 @@ class AdvancedWebEditorView
     @element
 
   readConfiguration: ->
-    return @configurationView.getValues()
+    return @form.getValues()
