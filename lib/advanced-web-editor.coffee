@@ -138,8 +138,8 @@ module.exports = AdvancedWebEditor =
 
   doClone: () ->
     console.log "doClone"
-    configuration = @lifeCycle.getConfiguration().get()
-    git.promisedClone configuration["repoUrl"], @lifeCycle.whereToClone()
+    configuration = @lifeCycle.getConfiguration()
+    git.promisedClone configuration.assembleCloneUrl(), @lifeCycle.whereToClone()
       .then (output) =>
         console.log output
         atom.notifications.addSuccess("Repository cloned succesfully")
