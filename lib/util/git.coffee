@@ -290,6 +290,12 @@ module.exports =
   pushAll: () ->
     return git "-c push.default=simple push --all origin --porcelain", {cwd: cwd}
 
+  #Git, create a branch and publish immediately:
+  createAndCheckoutBranch: (branch) ->
+    return callGit "checkout -b '#{branch}'", {cwd: cwd}
+      .then () ->
+        return callGit "push --set-upstream origin '#{branch}'", {cwd: cwd}
+
   tag: (name,href,msg) ->
     return callGit "tag -a #{name} -m '#{msg}' #{href}", (data) ->
       atomRefresh()

@@ -6,12 +6,16 @@ Configuration = require './configuration'
 { Directory } = require 'atom'
 { lstatSync, readdirSync, existsSync } = require('fs')
 { join } = require('path')
-branchRegex = /\/feature\/(\d+)\/(\w+)\/(\d+)/
+branchRegex = /origin\/feature\/(\d+)\/(\w+)\/(\d+)/
 STATUS =
   'INIT': 0
   'READY': 1
-  'STARTED': 2
-  'SAVED': 3
+  'STARTING': 2
+  'STARTED': 3
+  'SAVING' : 4
+  'SAVED': 5
+  'PUBLISHING': 6
+
   resolve: (status) ->
     return Object.keys(STATUS)
       .find (k) -> typeof(k) != "function" && STATUS[k] == status
@@ -50,6 +54,24 @@ class LifeCycle
   constructor: () ->
     @configuration = new Configuration()
     @status = STATUS.INIT
+
+  statusReady: () ->
+    @status = STATUS.READY
+
+  statusStarted: () ->
+    @status = STATUS.STARTED
+
+  statusStarting: () ->
+    @status = STATUS.STARTING
+
+  statusSaving: () ->
+    @status = STATUS.SAVING
+
+  statusSaved: () ->
+    @status = STATUS.SAVED
+
+  statusPublishing: () ->
+    @status = STATUS.PUBLISHING
 
   setupToolbar: (toolBar) ->
     toolBar.removeItems()
@@ -168,11 +190,15 @@ class LifeCycle
 
       git.remove(toRemove)
     .then -> git.commit()
-    .then -> atom.notifications.addSuccess("Changes have been saved succesfully. Publish them when you are ready.")
+    .then =>
+      @status = STATUS.SAVED
+      atom.notifications.addSuccess("Changes have been saved succesfully. Publish them when you are ready.")
 
   doPublish: () ->
     git.setProjectIndex @indexOfProject()
     return git.pushAll()
+      .then () =>
+        @status = STATUS.READY
 
   updateDevelop: () ->
     console.log "Update develop"
@@ -197,7 +223,18 @@ class LifeCycle
 
       now = moment()
       thisMonth = now.format("YYYYMM")
-      maxMonth = if months.length > 0 then String(Math.max.apply(months)) else thisMonth
+
+      chooseMax = (list, defaultValue) ->
+        if list.length == 1
+          res = list[0]
+        else if list.length == 0
+          res = defaultValue
+        else
+          res = Math.max.apply(null, list)
+
+        return res
+
+      maxMonth = String(chooseMax(months, thisMonth))
 
       monthAsDate = moment(maxMonth, "YYYYMM")
       thisMonthAsDate = moment(thisMonth, "YYYYMM")
@@ -206,14 +243,22 @@ class LifeCycle
 
       # retain only maxMonth branch and pick maximum
       numbers = userBranches
-        .filter (b) -> b.indexOf(maxMonth) >= 0
+        .filter (b) -> b.indexOf('/' + maxMonth + '/') >= 0
         .map (b) ->
           n = b.match branchRegex
-          return if m? then Number.parseInt(m[3]) else undefined # final number
+          return if n? then Number.parseInt(n[3]) else undefined # final number
         .filter (x) -> x
 
-      max = if numbers.length > 0 then  Math.max.apply(numbers) else 0
+      max = chooseMax(numbers, 0)
 
-      return "/feature/#{maxMonth}/#{username}/#{max + 1}"
+      return "feature/#{maxMonth}/#{username}/#{max + 1}"
+
+  newBranchThenSwitch: () ->
+    b = ""
+    @suggestNewBranchName()
+      .then (branch) ->
+        b = branch
+        git.createAndCheckoutBranch branch
+      .then () -> return b
 
 module.exports = LifeCycle

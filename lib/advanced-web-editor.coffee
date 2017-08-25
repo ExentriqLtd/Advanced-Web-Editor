@@ -1,5 +1,6 @@
 ConfigurationView = require './advanced-web-editor-view'
 {CompositeDisposable} = require 'atom'
+q = require 'q'
 LifeCycle = require './util/lifecycle'
 Configuration = require './util/configuration'
 git = require './util/git'
@@ -11,6 +12,7 @@ module.exports = AdvancedWebEditor =
 
   consumeToolBar: (getToolBar) ->
     @toolBar = getToolBar('advanced-web-editor')
+    @lifeCycle.setupToolbar(@toolBar) if @lifeCycle?
 
   initialize: ->
 
@@ -41,6 +43,7 @@ module.exports = AdvancedWebEditor =
 
     # Check configuration first
     @lifeCycle = new LifeCycle()
+    @lifeCycle.setupToolbar(@toolBar) if @toolBar?
     if !@lifeCycle.isConfigurationValid()
       console.log "Configuration required"
       @configure()
@@ -136,21 +139,59 @@ module.exports = AdvancedWebEditor =
     return git.promisedUnpushedCommits(@lifeCycle.whereToClone())
 
   doSaveOrPublish: (action) ->
+    promise = null
     if action == "commit"
-      @lifeCycle.doCommit()
+      promise = @lifeCycle.doCommit()
     else if action == "publish"
-      @lifeCycle.doPublish()
+      promise = @lifeCycle.doPublish()
+
+    promise().then () =>
+      @lifeCycle.setupToolbar(@toolBar)
 
   commandStartEditing: () ->
     console.log "Command: Start Editing"
+    git.setProjectIndex @lifeCycle.indexOfProject()
+    @lifeCycle.statusStarting()
+    @lifeCycle.setupToolbar(@toolBar)
+    @lifeCycle.newBranchThenSwitch()
+      .then (branch) =>
+        @lifeCycle.statusStarted()
+        @lifeCycle.setupToolbar(@toolBar)
+        atom.notifications.addInfo("Created branch #{branch}")
+      .fail (e) -> atom.notifications.addError "Error occurred",
+        description: e.message + "\n" + e.stdout
 
   commandSaveLocally: () ->
     console.log "Command: Save Locally"
+    git.setProjectIndex @lifeCycle.indexOfProject()
+    @lifeCycle.statusSaving()
+    @lifeCycle.setupToolbar(@toolBar)
+    @lifeCycle.doCommit()
+      .then () =>
+        @lifeCycle.statusSaved()
+        @lifeCycle.setupToolbar(@toolBar)
+        atom.notifications.addInfo("Changes have been saved locally")
+      .fail (e) -> atom.notifications.addError "Error occurred",
+        description: e.message + "\n" + e.stdout
+        @lifeCycle.statusStarted()
+        @lifeCycle.setupToolbar(@toolBar)
 
   commandPublish: () ->
     console.log "Command: Publish"
+    git.setProjectIndex @lifeCycle.indexOfProject()
+    @lifeCycle.statusPublishing()
+    @lifeCycle.setupToolbar(@toolBar)
+    @lifeCycle.doPublish().then () =>
+      @lifeCycle.statusReady()
+      @lifeCycle.setupToolbar(@toolBar)
+      atom.notifications.addInfo("Changes have been published")
+    .fail (e) -> atom.notifications.addError "Error occurred",
+      description: e.message + "\n" + e.stdout
+      @lifeCycle.statusSaved()
+      @lifeCycle.setupToolbar(@toolBar)
 
   doPreStartCheck: () ->
+    deferred = q.defer()
     @lifeCycle.openProjectFolder()
     @checkUncommittedChanges()
       .then (state) =>
@@ -185,9 +226,10 @@ module.exports = AdvancedWebEditor =
               buttons:
                 Yes: () =>
                   console.log this
-                  @doSaveOrPublish(action)
-                'Keep editing': -> #do Nothing
+                  deferred.resolve @doSaveOrPublish(action)
+                'Keep editing': -> deferred.resolve true#do Nothing
         else
-          @lifeCycle.updateDevelop()
-          @lifeCycle.suggestNewBranchName()
-            .then (branch) -> atom.notifications.addInfo "TODO: create branch "+ branch
+          @lifeCycle.statusReady()
+          return @lifeCycle.updateDevelop()
+
+        return deferred.promise
