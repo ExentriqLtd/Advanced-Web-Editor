@@ -7,6 +7,14 @@ Configuration = require './configuration'
 { lstatSync, readdirSync, existsSync } = require('fs')
 { join } = require('path')
 branchRegex = /\/feature\/(\d+)\/(\w+)\/(\d+)/
+STATUS =
+  'INIT': 0
+  'READY': 1
+  'STARTED': 2
+  'SAVED': 3
+  resolve: (status) ->
+    return Object.keys(STATUS)
+      .find (k) -> typeof(k) != "function" && STATUS[k] == status
 
 isDirectory = (source) ->
   try
@@ -41,6 +49,36 @@ class LifeCycle
 
   constructor: () ->
     @configuration = new Configuration()
+    @status = STATUS.INIT
+
+  setupToolbar: (toolBar) ->
+    toolBar.removeItems()
+
+    toolBar.addButton
+      icon: 'gear',
+      callback: 'advanced-web-editor:configure',
+      tooltip: 'Configure'
+
+    toolBar.addSpacer()
+
+    startBtn = toolBar.addButton
+      icon: 'zap',
+      callback: 'advanced-web-editor:start',
+      tooltip: 'Start Editing'
+
+    saveBtn = toolBar.addButton
+      icon: 'database',
+      callback: 'advanced-web-editor:save',
+      tooltip: 'Save Locally'
+
+    publishBtn = toolBar.addButton
+      icon: 'cloud-upload',
+      callback: 'advanced-web-editor:publish',
+      tooltip: 'Publish'
+
+    startBtn.setEnabled @status == STATUS.READY
+    saveBtn.setEnabled @status == STATUS.STARTED
+    publishBtn.setEnabled @status == STATUS.SAVED
 
   getConfiguration: () ->
     return @configuration

@@ -10,32 +10,7 @@ module.exports = AdvancedWebEditor =
   subscriptions: null
 
   consumeToolBar: (getToolBar) ->
-    toolBar = getToolBar('advanced-web-editor')
-
-    #TODO: set state
-    toolBar.addButton
-      icon: 'gear',
-      callback: 'advanced-web-editor:configure',
-      tooltip: 'Configure'
-
-    toolBar.addSpacer()
-
-    toolBar.addButton
-      icon: 'zap',
-      callback: 'advanced-web-editor:start',
-      tooltip: 'Start Editing'
-
-    toolBar.addButton
-      icon: 'database',
-      callback: 'advanced-web-editor:save',
-      tooltip: 'Save Locally'
-
-    toolBar.addButton
-      icon: 'cloud-upload',
-      callback: 'advanced-web-editor:publish',
-      tooltip: 'Publish'
-
-    console.log "Toolbar", toolBar
+    @toolBar = getToolBar('advanced-web-editor')
 
   initialize: ->
 
@@ -73,51 +48,12 @@ module.exports = AdvancedWebEditor =
       if @lifeCycle.haveToClone()
         @askForClone()
       else
-        @lifeCycle.openProjectFolder()
-        @checkUncommittedChanges()
-          .then (state) =>
-            if state
-              return {
-                state: "unsaved"
-              }
-            else
-              @checkUnpublishedChanges()
-                .then (unpublishedBranches) ->
-                  console.log unpublishedBranches
-                  if unpublishedBranches.length > 0
-                    return {
-                      state: "unpublished"
-                      branches: unpublishedBranches
-                    }
-                  else
-                    return{
-                      state: "ok"
-                    }
-          .then (state) =>
-            console.log state
-            if state.state != "ok"
-              action = 'commit' if state.state == 'unsaved'
-              action = 'publish' if state.state == 'unpublished'
-              branches = ''
-              branches = "Involved branches: " + state.branches.join(",") + ".\n" if state.branches?
-              if state != "ok"
-                atom.confirm
-                  message: "Detected #{state.state} changes."
-                  detailedMessage: "#{branches}Do you want to #{action} them now?"
-                  buttons:
-                    Yes: () =>
-                      console.log this
-                      @doSaveOrPublish(action)
-                    'Keep editing': -> #do Nothing
-            else
-              @lifeCycle.updateDevelop()
-              @lifeCycle.suggestNewBranchName()
-                .then (branch) -> atom.notifications.addInfo "TODO: create branch "+ branch
-                .fail (e) -> console.log e
-
+        @doPreStartCheck()
+          .then () =>
+            @lifeCycle.setupToolbar(@toolBar)
           .fail (e) ->
             console.log e.message, e.stdout
-            atom.notifications.addError "Error occurred",
+            atom.notifications.addError "Error occurred during initialization",
               description: e.message + "\n" + e.stdout
 
 
@@ -213,3 +149,45 @@ module.exports = AdvancedWebEditor =
 
   commandPublish: () ->
     console.log "Command: Publish"
+
+  doPreStartCheck: () ->
+    @lifeCycle.openProjectFolder()
+    @checkUncommittedChanges()
+      .then (state) =>
+        if state
+          return {
+            state: "unsaved"
+          }
+        else
+          @checkUnpublishedChanges()
+            .then (unpublishedBranches) ->
+              # console.log unpublishedBranches
+              if unpublishedBranches.length > 0
+                return {
+                  state: "unpublished"
+                  branches: unpublishedBranches
+                }
+              else
+                return{
+                  state: "ok"
+                }
+      .then (state) =>
+        console.log state
+        if state.state != "ok"
+          action = 'commit' if state.state == 'unsaved'
+          action = 'publish' if state.state == 'unpublished'
+          branches = ''
+          branches = "Involved branches: " + state.branches.join(",") + ".\n" if state.branches?
+          if state != "ok"
+            atom.confirm
+              message: "Detected #{state.state} changes."
+              detailedMessage: "#{branches}Do you want to #{action} them now?"
+              buttons:
+                Yes: () =>
+                  console.log this
+                  @doSaveOrPublish(action)
+                'Keep editing': -> #do Nothing
+        else
+          @lifeCycle.updateDevelop()
+          @lifeCycle.suggestNewBranchName()
+            .then (branch) -> atom.notifications.addInfo "TODO: create branch "+ branch
