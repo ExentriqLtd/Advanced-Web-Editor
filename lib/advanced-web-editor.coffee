@@ -1,13 +1,18 @@
 ConfigurationView = require './advanced-web-editor-view'
+BranchView = require './branch-view'
+
 {CompositeDisposable} = require 'atom'
 q = require 'q'
+
 LifeCycle = require './util/lifecycle'
 Configuration = require './util/configuration'
 git = require './util/git'
 
 module.exports = AdvancedWebEditor =
   configurationView: null
+  branchView: null
   panel: null
+  modalPanel: null
   subscriptions: null
 
   consumeToolBar: (getToolBar) ->
@@ -63,8 +68,11 @@ module.exports = AdvancedWebEditor =
   deactivate: ->
     @subscriptions.dispose()
     @configurationView?.destroy()
+    @branchView?.destroy()
     @panel?.destroy()
     @panel = null
+    @modalPanel?.destroy()
+    @modalPanel = null
     @toolBar?.removeItems()
     @toolBar = null
 
@@ -148,10 +156,40 @@ module.exports = AdvancedWebEditor =
     promise().then () =>
       @lifeCycle.setupToolbar(@toolBar)
 
-  commandStartEditing: () ->
-    console.log "Command: Start Editing"
+  askForBranch: ->
+    console.log 'AdvancedWebEditor ask for branch'
+    @lifeCycle.getYourBranches()
+      .then (branches) =>
+        # console.log branches
+        @branchView = new BranchView(
+          branches,
+          (branch) => @answerUseBranch branch,
+          () => @answerCreateNewBranch
+        )
+        @modalPanel = atom.workspace.addModalPanel
+          item: @branchView
+          visible: true
+
+  answerUseBranch: (branch) ->
+    @lifeCycle.isBranchRemote(branch).then (isRemote) =>
+      git.checkout(branch, isRemote).then =>
+        git.setProjectIndex @lifeCycle.indexOfProject()
+        @lifeCycle.statusStarted()
+        @lifeCycle.setupToolbar(@toolBar)
+        @modalPanel.hide()
+        @modalPanel.destroy()
+        @modalPanel = null
+        @branchView.destroy()
+        @branchView = null
+
+  answerCreateNewBranch: () ->
     git.setProjectIndex @lifeCycle.indexOfProject()
-    @lifeCycle.statusStarting()
+    @lifeCycle.statusStarted()
+    @modalPanel.hide()
+    @modalPanel.destroy()
+    @modalPanel = null
+    @branchView.destroy()
+    @branchView = null
     @lifeCycle.setupToolbar(@toolBar)
     @lifeCycle.newBranchThenSwitch()
       .then (branch) =>
@@ -160,6 +198,10 @@ module.exports = AdvancedWebEditor =
         atom.notifications.addInfo("Created branch #{branch}")
       .fail (e) -> atom.notifications.addError "Error occurred",
         description: e.message + "\n" + e.stdout
+
+  commandStartEditing: () ->
+    console.log "Command: Start Editing"
+    @askForBranch()
 
   commandSaveLocally: () ->
     console.log "Command: Save Locally"

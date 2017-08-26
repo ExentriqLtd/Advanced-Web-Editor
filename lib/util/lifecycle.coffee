@@ -206,10 +206,26 @@ class LifeCycle
       .then () ->
         git.pull()
 
+  getYourBranches: () ->
+    username = @configuration.get()["username"]
+    return @getBranchesByUser(username).then (branches) ->
+      return branches.map (b) -> b.replace 'origin/', ''
+
   getBranchesByUser: (username) ->
     return git.getBranches().then (branches) ->
       # console.log branches
       branches.remote.filter (b) -> b.indexOf("/#{username}/") >= 0
+
+  isBranchRemote: (branch) ->
+    return git.getBranches().then (branches) ->
+      isRemote = branches.remote
+        .filter (b) -> b == 'origin/' + branch
+        .length > 0
+      isLocal = branches.local
+        .filter (b) -> b == branch
+        .length > 0
+      console.log branches, isRemote, isLocal, branch
+      return isRemote && !isLocal
 
   suggestNewBranchName: () ->
     console.log "suggestNewBranchName"
