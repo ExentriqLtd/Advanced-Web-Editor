@@ -164,7 +164,7 @@ module.exports = AdvancedWebEditor =
         @branchView = new BranchView(
           branches,
           (branch) => @answerUseBranch branch,
-          () => @answerCreateNewBranch
+          () => @answerCreateNewBranch()
         )
         @modalPanel = atom.workspace.addModalPanel
           item: @branchView
@@ -183,6 +183,7 @@ module.exports = AdvancedWebEditor =
         @branchView = null
 
   answerCreateNewBranch: () ->
+    console.log "Answer: create new branch"
     git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusStarted()
     @modalPanel.hide()
