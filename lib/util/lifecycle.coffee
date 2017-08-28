@@ -32,12 +32,6 @@ getDirectories = (source) ->
 elementInList = (dir, directories) ->
   return directories.find dir
 
-existsAllIn = (set1, set2) ->
-  count = set1.map (x) ->
-    return if elementInList x, set2 then 1 else 0
-  .reduce ((a, b) -> a + b), 0
-  return count == set2.length
-
 getRepoName = (uri) ->
   tmp = uri.split('/')
   name = tmp[tmp.length-1]
@@ -130,10 +124,7 @@ class LifeCycle
 
   isProjectPathsOpen: () ->
     openedPaths = atom.project.getPaths()
-    # projectPaths = getDirectories(@configuration.get("cloneDir"))
     projectPath = @whereToClone()
-
-    # return existsAllIn(openedPaths, projectPaths) && existsAllIn(projectPaths, openedPaths)
     return elementInList(projectPath, openedPaths)
 
   openProjectFolder: () ->

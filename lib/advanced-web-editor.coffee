@@ -125,7 +125,13 @@ module.exports = AdvancedWebEditor =
       .then (output) =>
         console.log output
         atom.notifications.addSuccess("Repository cloned succesfully")
-        @lifeCycle.openProjectFolder()
+        @doPreStartCheck()
+          .then () =>
+            @lifeCycle.setupToolbar(@toolBar)
+          .fail (e) ->
+            console.log e.message, e.stdout
+            atom.notifications.addError "Error occurred during initialization",
+              description: e.message + "\n" + e.stdout
       .fail (e) =>
         console.log e
         atom.confirm
