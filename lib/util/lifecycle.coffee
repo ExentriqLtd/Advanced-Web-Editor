@@ -74,23 +74,28 @@ class LifeCycle
       icon: 'gear',
       callback: 'advanced-web-editor:configure',
       tooltip: 'Configure'
+      priority: 86
 
-    toolBar.addSpacer()
+    toolBar.addSpacer
+      priority: 87
 
     startBtn = toolBar.addButton
       icon: 'zap',
       callback: 'advanced-web-editor:start',
       tooltip: 'Start Editing'
+      priority: 88
 
     saveBtn = toolBar.addButton
       icon: 'database',
       callback: 'advanced-web-editor:save',
       tooltip: 'Save Locally'
+      priority: 89
 
     publishBtn = toolBar.addButton
       icon: 'cloud-upload',
       callback: 'advanced-web-editor:publish',
       tooltip: 'Publish'
+      priority: 90
 
     startBtn.setEnabled @status == STATUS.READY
     saveBtn.setEnabled @status == STATUS.STARTED
