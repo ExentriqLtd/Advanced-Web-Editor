@@ -172,6 +172,7 @@ module.exports = AdvancedWebEditor =
 
   answerUseBranch: (branch) ->
     @lifeCycle.isBranchRemote(branch).then (isRemote) =>
+      branch = "origin/" + branch if isRemote
       git.checkout(branch, isRemote).then =>
         git.setProjectIndex @lifeCycle.indexOfProject()
         @lifeCycle.statusStarted()
