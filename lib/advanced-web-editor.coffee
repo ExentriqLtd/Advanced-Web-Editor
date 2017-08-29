@@ -59,7 +59,9 @@ module.exports = AdvancedWebEditor =
         @doPreStartCheck()
           .then () =>
             @lifeCycle.setupToolbar(@toolBar)
-          .fail (e) ->
+          .fail (e) =>
+            @lifeCycle.statusReady()
+            @lifeCycle.setupToolbar(@toolBar)
             console.log e.message, e.stdout
             atom.notifications.addError "Error occurred during initialization",
               description: e.message + "\n" + e.stdout
@@ -87,11 +89,14 @@ module.exports = AdvancedWebEditor =
 
   configure: ->
     console.log 'AdvancedWebEditor shown configuration'
+    if @panel?
+      return
+
     @configurationView = new ConfigurationView(@lifeCycle.getConfiguration(),
       () => @saveConfig(),
       () => @hideConfigure()
     )
-    @panel = atom.workspace.addTopPanel(item: @configurationView.getElement(), visible: false) if !@panel?
+    @panel = atom.workspace.addTopPanel(item: @configurationView.getElement(), visible: false)
     @panel.show()
 
   saveConfig: ->
@@ -112,11 +117,11 @@ module.exports = AdvancedWebEditor =
 
   askForClone: () ->
     atom.confirm
-      message: 'Do you want to clone the repository now?'
-      detailedMessage: 'Your repository will be downloaded.'
+      message: 'Information: Download about to start'
+      detailedMessage: 'Your repository will be downloaded. It may take a long time.'
       buttons:
-        Yes: => @doClone()
-        No: -> () -> {}
+        OK: => @doClone()
+        # No: -> () -> {}
 
   doClone: () ->
     console.log "doClone"
@@ -154,15 +159,26 @@ module.exports = AdvancedWebEditor =
 
   doSaveOrPublish: (action) ->
     promise = null
-    if action == "commit"
-      promise = @lifeCycle.doCommit()
+    if action == "save"
+      promise = @lifeCycle.doCommit
+      @lifeCycle.statusSaving()
     else if action == "publish"
-      promise = @lifeCycle.doPublish()
+      promise = @lifeCycle.doPublish
+      @lifeCycle.statusPublishing()
 
-    promise().then () =>
+    @lifeCycle.setupToolbar(@toolBar)
+    promise.bind(@lifeCycle)().then () =>
+      if action == "save"
+        @lifeCycle.statusSaved()
+      else
+        @lifeCycle.statusStarted()
       @lifeCycle.setupToolbar(@toolBar)
 
   askForBranch: ->
+    advancedMode = @lifeCycle.getConfiguration().get()["advancedMode"]
+    if !advancedMode
+      return @answerCreateNewBranch()
+
     console.log 'AdvancedWebEditor ask for branch'
     @lifeCycle.getYourBranches()
       .then (branches) =>
@@ -183,20 +199,20 @@ module.exports = AdvancedWebEditor =
         git.setProjectIndex @lifeCycle.indexOfProject()
         @lifeCycle.statusStarted()
         @lifeCycle.setupToolbar(@toolBar)
-        @modalPanel.hide()
-        @modalPanel.destroy()
+        @modalPanel?.hide()
+        @modalPanel?.destroy()
         @modalPanel = null
-        @branchView.destroy()
+        @branchView?.destroy()
         @branchView = null
 
   answerCreateNewBranch: () ->
     console.log "Answer: create new branch"
     git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusStarted()
-    @modalPanel.hide()
-    @modalPanel.destroy()
+    @modalPanel?.hide()
+    @modalPanel?.destroy()
     @modalPanel = null
-    @branchView.destroy()
+    @branchView?.destroy()
     @branchView = null
     @lifeCycle.setupToolbar(@toolBar)
     @lifeCycle.newBranchThenSwitch()
@@ -220,9 +236,9 @@ module.exports = AdvancedWebEditor =
       .then () =>
         @lifeCycle.statusSaved()
         @lifeCycle.setupToolbar(@toolBar)
-        atom.notifications.addInfo("Changes have been saved locally")
-      .fail (e) -> atom.notifications.addError "Error occurred",
+      .fail (e) => atom.notifications.addError "Error occurred",
         description: e.message + "\n" + e.stdout
+
         @lifeCycle.statusStarted()
         @lifeCycle.setupToolbar(@toolBar)
 
@@ -234,9 +250,9 @@ module.exports = AdvancedWebEditor =
     @lifeCycle.doPublish().then () =>
       @lifeCycle.statusReady()
       @lifeCycle.setupToolbar(@toolBar)
-      atom.notifications.addInfo("Changes have been published")
-    .fail (e) -> atom.notifications.addError "Error occurred",
-      description: e.message + "\n" + e.stdout
+    .fail (e) =>
+      atom.notifications.addError "Error occurred",
+        description: e.message + "\n" + e.stdout
       @lifeCycle.statusSaved()
       @lifeCycle.setupToolbar(@toolBar)
 
@@ -265,7 +281,7 @@ module.exports = AdvancedWebEditor =
       .then (state) =>
         console.log state
         if state.state != "ok"
-          action = 'commit' if state.state == 'unsaved'
+          action = 'save' if state.state == 'unsaved'
           action = 'publish' if state.state == 'unpublished'
           branches = ''
           branches = "Involved branches: " + state.branches.join(",") + ".\n" if state.branches?
@@ -275,7 +291,6 @@ module.exports = AdvancedWebEditor =
               detailedMessage: "#{branches}Do you want to #{action} them now?"
               buttons:
                 Yes: () =>
-                  console.log this
                   deferred.resolve @doSaveOrPublish(action)
                 'Keep editing': -> deferred.resolve true#do Nothing
         else

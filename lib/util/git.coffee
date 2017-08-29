@@ -288,13 +288,13 @@ module.exports =
               return branches.filter (x) -> x
 
   pushAll: () ->
-    return git "-c push.default=simple push --all origin --porcelain", {cwd: cwd}
+    return callGit "-c push.default=simple push --all origin --porcelain", parseDefault
 
   #Git, create a branch and publish immediately:
   createAndCheckoutBranch: (branch) ->
-    return callGit "checkout -b '#{branch}'", {cwd: cwd}
+    return callGit "checkout -b '#{branch}'", parseDefault
       .then () ->
-        return callGit "push --set-upstream origin '#{branch}'", {cwd: cwd}
+        return callGit "push --set-upstream origin '#{branch}'", parseDefault
 
   tag: (name,href,msg) ->
     return callGit "tag -a #{name} -m '#{msg}' #{href}", (data) ->

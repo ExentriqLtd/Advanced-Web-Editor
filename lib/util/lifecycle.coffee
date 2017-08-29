@@ -143,14 +143,6 @@ class LifeCycle
     if shouldOpen
       atom.project.addPath projectPath
 
-  hasUncommittedChanges: () ->
-    # TODO: Implement
-    return false
-
-  hasUnpublishedChanges: () ->
-    # TODO: Implement
-    return false
-
   indexOfProject: () ->
     dirs = atom.project.getDirectories()
     dir = @whereToClone()
@@ -190,6 +182,7 @@ class LifeCycle
     return git.pushAll()
       .then () =>
         @status = STATUS.READY
+        atom.notifications.addSuccess("Changes have been published succesfully.")
 
   updateDevelop: () ->
     console.log "Update develop"
