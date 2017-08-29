@@ -113,6 +113,9 @@ class LifeCycle
   isConfigurationValid: () ->
     return @configuration.exists() && @configuration.isValid()
 
+  gitConfig: (username, email) ->
+    return git.gitConfig(username, email)
+
   haveToClone: () ->
     dir = new Directory(@whereToClone())
     exists = dir.existsSync()

@@ -304,3 +304,8 @@ module.exports =
   setRemoteUrl: (name, url) ->
     return callGit "remote set-url #{name} #{url}", () ->
       # Do Nothing since no response occur
+
+  gitConfig: (fullName, email) ->
+    return callGit "config --global user.name \"#{fullName}\"", parseDefault
+      .then () -> callGit "config --global user.email #{email}", parseDefault
+      .then () -> callGit "config --global push.default simple", parseDefault

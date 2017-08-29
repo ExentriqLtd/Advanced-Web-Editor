@@ -108,9 +108,11 @@ module.exports = AdvancedWebEditor =
       Configuration.reasons[k]
     if validationMessages.length == 0
       @lifeCycle.saveConfiguration()
-      @hideConfigure()
-      if @lifeCycle.haveToClone()
-        @askForClone()
+      @lifeCycle.gitConfig confValues["fullName"], confValues["email"]
+        .then () =>
+          @hideConfigure()
+          if @lifeCycle.haveToClone()
+            @askForClone()
     else
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
