@@ -138,7 +138,7 @@ module.exports = AdvancedWebEditor =
   doClone: () ->
     console.log "doClone"
     configuration = @lifeCycle.getConfiguration()
-    git.promisedClone configuration.assembleCloneUrl(), @lifeCycle.whereToClone()
+    git.clone configuration.assembleCloneUrl(), @lifeCycle.whereToClone()
       .then (output) =>
         console.log output
         atom.notifications.addSuccess("Repository cloned succesfully")
@@ -160,14 +160,13 @@ module.exports = AdvancedWebEditor =
 
   checkUncommittedChanges: () ->
     console.log "checkUncommittedChanges"
-    return git.promisedStatus(@lifeCycle.whereToClone())
-      .then (output) ->
-        return output && output.length > 0
+    git.setProjectIndex @lifeCycle.indexOfProject()
+    return git.status().then (output) -> output && output.length > 0
 
   checkUnpublishedChanges: () ->
     console.log "checkUnpublishedChanges"
     git.setProjectIndex @lifeCycle.indexOfProject()
-    return git.promisedUnpushedCommits(@lifeCycle.whereToClone())
+    return git.unpushedCommits()
 
   doSaveOrPublish: (action) ->
     promise = null

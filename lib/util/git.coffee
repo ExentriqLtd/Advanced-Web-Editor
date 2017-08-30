@@ -95,6 +95,8 @@ parseStatus = (data) -> q.fcall ->
 parseDefault = (data) -> q.fcall ->
   return true
 
+returnAsIs = (data) -> data
+
 callGit = (cmd, parser, nodatalog) ->
   logcb "> git #{cmd}"
 
@@ -163,8 +165,7 @@ module.exports =
       return parseDefault(data)
 
   clone: (repo, target) ->
-    return callGit "clone " + repo + " " + target, (data) ->
-      return parseDefault(data)
+    return callGit "clone -q #{repo} #{target}", parseDefault
 
   checkout: (branch, remote) ->
     return callGit "checkout #{if remote then '--track ' else ''}#{branch}", (data) ->
@@ -266,22 +267,16 @@ module.exports =
   status: ->
     return callGit 'status --porcelain --untracked-files=all', parseStatus
 
-  promisedClone: (repo, target) ->
-    return git("clone -q " + repo + " " + target, {cwd: target})
-
-  promisedStatus: (target) ->
-    return git 'status --porcelain --untracked-files=all', {cwd: target}
-
-  promisedUnpushedCommitBranch: (branch, target) ->
-    return git("log origin/#{branch}..#{branch} --oneline", {cwd: target})
+  unpushedCommitBranch: (branch) ->
+    return callGit "log origin/#{branch}..#{branch} --oneline", returnAsIs
       .then (output) ->
         return output != ""
 
-  promisedUnpushedCommits: (target) ->
+  unpushedCommits: () ->
     # get all local branches
     return getBranches().then (branches) =>
       return q.all(branches.local.map((branch) =>
-        return @promisedUnpushedCommitBranch(branch, target)
+        return @unpushedCommitBranch(branch)
           .then (hasCommits) ->
             return if hasCommits then branch else undefined
             )).then (branches)->
