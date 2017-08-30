@@ -23,7 +23,7 @@ transformBranchResponse = (body) ->
 
 class PullRequestManager
 
-  constructor: (@bitBucketUsername, @bitBucketPassword, @username) ->
+  constructor: (@bitBucketUsername, @bitBucketPassword) ->
 
   buildAuth: () ->
     return {
@@ -51,7 +51,7 @@ class PullRequestManager
 
     return deferred.promise
 
-  createPullRequest: (title, description, repoOwner, fromBranch, toBranch) ->
+  createPullRequest: (title, description, repoOwner, repoName, fromBranch, toBranch) ->
     deferred = q.defer()
     url = "#{API_URL}#{repoOwner}/#{repoName}/pullrequests"
 
@@ -71,6 +71,8 @@ class PullRequestManager
           branch:
             name: toBranch
         close_source_branch: false
+
+    console.log "PullRequestManager::createPullRequest", options
 
     request.post options, (error, response, body) ->
       try

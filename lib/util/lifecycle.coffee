@@ -1,12 +1,16 @@
 git = require './git'
 path = require 'path'
 moment = require 'moment'
+q = require 'q'
 
 Configuration = require './configuration'
+PullRequestManager = require './pull-request-manager'
+
 { Directory } = require 'atom'
 { lstatSync, readdirSync, existsSync } = require('fs')
 { join } = require('path')
 branchRegex = /origin\/feature\/(\d+)\/(\w+)\/(\d+)/
+TODAY_FORMAT = "MMM d YYYY - HH:mm"
 STATUS =
   'INIT': 0
   'READY': 1
@@ -194,16 +198,65 @@ class LifeCycle
 
   doPublish: () ->
     git.setProjectIndex @indexOfProject()
-    return git.pushAll()
+    conf = @configuration.get()
+    branches = []
+    repoName = getRepoName(conf.repoUrl)
+    prm = new PullRequestManager(conf.username, conf.password)
+    # First: gather modified branches
+    return git.unpushedCommits()
+      .then (modifiedBranches) ->
+        branches = modifiedBranches
+        # Then: gather open pull requests
+        return prm.getPullRequests(conf.repoOwner, repoName)
+      .then (pullRequests) ->
+        console.log "Pull requests", pullRequests
+        # Filter out branches if pull requests are pending already
+        list = pullRequests.map (pr) -> pr.from
+        branches = branches.filter (b) -> list.length == 0 || list.indexOf(b) < 0
+        return branches
+      .then () ->
+        #Then: push all branches
+        return git.pushAll()
       .then () =>
+        console.log "Will open PR for", branches
+        # Open PRs for remaining branches towards branch develop
+        return @openPullRequests(prm, branches)
+      .then (status) =>
+        console.log "Pull requests status", status
+        #Then notify we're ready for another round
         @status = STATUS.READY
         atom.notifications.addSuccess("Changes have been published succesfully.")
 
-  updateDevelop: () ->
-    console.log "Update develop"
-    return git.checkout "develop"
+  openPullRequests: (prm, branches) ->
+    conf = @configuration.get()
+    repoName = getRepoName(conf.repoUrl)
+    return q.all branches.map (b) => @openPullRequest prm, conf.repoOwner, repoName, b
+
+  openPullRequest: (prm, repoOwner, repoName, branch) ->
+    today = moment().format(TODAY_FORMAT)
+    title = "#{branch} - #{today}"
+    description = "Pull request created on #{today}"
+    prm.createPullRequest(title, description, repoOwner, repoName, branch, 'develop')
       .then () ->
-        git.pull()
+        return {
+          branch: branch
+          ok: true
+        }
+      .fail (error) ->
+        return {
+          branch: branch
+          ok: false
+          error: error
+        }
+
+  updateMaster: () -> @checkoutThenUpdate 'master'
+  updateDevelop: () -> @checkoutThenUpdate 'develop'
+
+  checkoutThenUpdate: (branch) ->
+    console.log "Update #{branch}"
+    git.setProjectIndex @indexOfProject()
+    return git.checkout branch
+      .then () -> git.pull()
 
   getYourBranches: () ->
     username = @configuration.get()["username"]

@@ -9,6 +9,7 @@ class ConfigurationFormView extends FormView
     @addRow @createFieldRow("repoUrl", "text", Configuration.labels.repoUrl)
     @addRow @createFieldRow("fullName", "text", Configuration.labels.fullName)
     @addRow @createFieldRow("email", "text", Configuration.labels.email)
+    @addRow @createFieldRow("repoOwner", "text", Configuration.labels.repoOwner)
     @addRow @createFieldRow("username", "text", Configuration.labels.username)
     @addRow @createFieldRow("password", "password", Configuration.labels.password)
     @addRow @createFieldRow("cloneDir", "directory", Configuration.labels.cloneDir)

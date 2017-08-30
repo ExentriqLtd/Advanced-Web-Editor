@@ -3,13 +3,14 @@ CSON = require('cson')
 
 {File, Directory} = require 'atom'
 FILE_PATH = app.getPath("userData") + "/" + "adv-web-editor.cson"
-keys = ["repoUrl", "fullName", "email", "username", "password", "cloneDir", "advancedMode"]
+keys = ["repoUrl", "fullName", "email", "repoOwner", "username", "password", "cloneDir", "advancedMode"]
 
 class Configuration
   @labels:
     repoUrl: "Project Clone URL"
     fullName: "Full Name"
     email: "Your Email",
+    repoOwner: "Repository Owner"
     username: "Username"
     password: "Password"
     cloneDir: "Clone Directory"
@@ -19,6 +20,7 @@ class Configuration
     repoUrl: "Project Clone URL must be a valid http://, https:// or SSH Git repository"
     fullName: "Full Name must not be empty"
     email: "Your Email must be a valid email address",
+    repoOwner: "Repository Owner must not be empty. It is required for pull requests."
     username: "Username must not be empty. It is required for pull requests."
     password: "Password must not be empty. It is required for pull requests."
     cloneDir: "Clone Directory must be set"
@@ -49,6 +51,7 @@ class Configuration
     repoUrl: @validators.isValidRepo
     fullName: @validators.isNotBlank
     email: @validators.isEmail
+    repoOwner: @validators.isNotBlank
     username: @validators.isNotBlank
     password: @validators.isNotBlank
     cloneDir: @validators.isNotBlank
