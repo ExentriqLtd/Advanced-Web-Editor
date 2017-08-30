@@ -50,24 +50,31 @@ class LifeCycle
     @status = STATUS.INIT
 
   statusReady: () ->
+    console.log "lifeCycle::statusReady"
     @status = STATUS.READY
 
   statusStarted: () ->
+    console.log "lifeCycle::statusStarted"
     @status = STATUS.STARTED
 
   statusStarting: () ->
+    console.log "lifeCycle::statusStarting"
     @status = STATUS.STARTING
 
   statusSaving: () ->
+    console.log "lifeCycle::statusSaving"
     @status = STATUS.SAVING
 
   statusSaved: () ->
+    console.log "lifeCycle::statusSaved"
     @status = STATUS.SAVED
 
   statusPublishing: () ->
+    console.log "lifeCycle::statusPublishing"
     @status = STATUS.PUBLISHING
 
   setupToolbar: (toolBar) ->
+    console.log "lifeCycle::setupToolbar"
     toolBar.removeItems()
 
     toolBar.addButton

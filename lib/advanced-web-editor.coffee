@@ -113,6 +113,16 @@ module.exports = AdvancedWebEditor =
           @hideConfigure()
           if @lifeCycle.haveToClone()
             @askForClone()
+          else
+            @doPreStartCheck()
+              .then () =>
+                @lifeCycle.setupToolbar(@toolBar)
+              .fail (e) =>
+                @lifeCycle.statusReady()
+                @lifeCycle.setupToolbar(@toolBar)
+                console.log e.message, e.stdout
+                atom.notifications.addError "Error occurred during initialization",
+                  description: e.message + "\n" + e.stdout
     else
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
@@ -298,5 +308,9 @@ module.exports = AdvancedWebEditor =
         else
           @lifeCycle.statusReady()
           return @lifeCycle.updateDevelop()
+      .then () =>
+        atom.notifications.addInfo("Everything is up to date. Start editing when you are ready")
+        @lifeCycle.statusReady()
+        deferred.resolve true
 
-        return deferred.promise
+      return deferred.promise
