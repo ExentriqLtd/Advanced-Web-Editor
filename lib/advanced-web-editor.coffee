@@ -8,12 +8,15 @@ LifeCycle = require './util/lifecycle'
 Configuration = require './util/configuration'
 git = require './util/git'
 
+STATUS_CHECK_INTERVAL = 2500
+
 module.exports = AdvancedWebEditor =
   configurationView: null
   branchView: null
   panel: null
   modalPanel: null
   subscriptions: null
+  statusCheckInterval: -1
 
   consumeToolBar: (getToolBar) ->
     @toolBar = getToolBar('advanced-web-editor')
@@ -168,6 +171,26 @@ module.exports = AdvancedWebEditor =
     git.setProjectIndex @lifeCycle.indexOfProject()
     return git.unpushedCommits()
 
+  statusCheck: () ->
+    console.log "statusCheck ->"
+    q.all [@checkUncommittedChanges(), @checkUnpublishedChanges()]
+      .then (results) =>
+        console.log results
+        if results[0]
+          @lifeCycle.statusStarted()
+        else if results[1].length > 0
+          @lifeCycle.statusSaved()
+        @lifeCycle.setupToolbar @toolBar
+
+  startStatusCheck: () ->
+    @statusCheckInterval= window.setInterval () =>
+      @statusCheck()
+    , STATUS_CHECK_INTERVAL if @statusCheckInterval < 0
+
+  stopStatusCheck: () ->
+    window.clearInterval @statusCheckInterval
+    @statusCheckInterval = -1
+
   doSaveOrPublish: (action) ->
     promise = null
     if action == "save"
@@ -215,6 +238,7 @@ module.exports = AdvancedWebEditor =
         @modalPanel = null
         @branchView?.destroy()
         @branchView = null
+        @startStatusCheck()
 
   answerCreateNewBranch: () ->
     console.log "Answer: create new branch"
@@ -230,6 +254,7 @@ module.exports = AdvancedWebEditor =
       .then (branch) =>
         @lifeCycle.statusStarted()
         @lifeCycle.setupToolbar(@toolBar)
+        @startStatusCheck()
         atom.notifications.addInfo("Created branch #{branch}")
       .fail (e) -> atom.notifications.addError "Error occurred",
         description: e.message + "\n" + e.stdout
@@ -260,6 +285,7 @@ module.exports = AdvancedWebEditor =
     @lifeCycle.setupToolbar(@toolBar)
     @lifeCycle.doPublish().then () =>
       @lifeCycle.statusReady()
+      @stopStatusCheck()
       @lifeCycle.setupToolbar(@toolBar)
     .fail (e) =>
       atom.notifications.addError "Error occurred",
