@@ -1,5 +1,6 @@
 ConfigurationView = require './advanced-web-editor-view'
 BranchView = require './branch-view'
+ProgressView = require './util/progress-view'
 
 {CompositeDisposable} = require 'atom'
 q = require 'q'
@@ -9,6 +10,7 @@ Configuration = require './util/configuration'
 git = require './util/git'
 
 STATUS_CHECK_INTERVAL = 2500
+FOLDER_SIZE_INTERVAL = 1500
 
 module.exports = AdvancedWebEditor =
   configurationView: null
@@ -141,25 +143,83 @@ module.exports = AdvancedWebEditor =
   doClone: () ->
     console.log "doClone"
     configuration = @lifeCycle.getConfiguration()
-    git.clone configuration.assembleCloneUrl(), @lifeCycle.whereToClone()
-      .then (output) =>
-        console.log output
-        atom.notifications.addSuccess("Repository cloned succesfully")
-        @doPreStartCheck()
-          .then () =>
-            @lifeCycle.setupToolbar(@toolBar)
-          .fail (e) ->
-            console.log e.message, e.stdout
-            atom.notifications.addError "Error occurred during initialization",
-              description: e.message + "\n" + e.stdout
-      .fail (e) =>
-        console.log e
-        atom.confirm
-          message: 'Error occurred'
-          detailedMessage: "An error occurred during git clone:\n#{e.message}\n#{e.stdout}\n\nYou may want to try again or check out your configuration."
-          buttons:
-            Configure: => @configure()
-            Retry: => @doClone()
+
+    folderSizeInterval = -1
+    repoSize = -1
+    currentSize = 0
+
+    isBitbucketRepo = @lifeCycle.isBitbucketRepo()
+
+    percentage = (value, max) ->
+      if value < 0
+        return 0
+      if value >= max
+        return max
+      return value / max * 100.0
+
+    callGitClone = () =>
+      git.clone configuration.assembleCloneUrl(), @lifeCycle.whereToClone()
+        .then (output) =>
+          console.log output
+          atom.notifications.addSuccess("Repository cloned succesfully")
+          @doPreStartCheck()
+            .then () =>
+              @lifeCycle.setupToolbar(@toolBar)
+            .fail (e) ->
+              console.log e.message, e.stdout
+              atom.notifications.addError "Error occurred during initialization",
+                description: e.message + "\n" + e.stdout
+        .fail (e) =>
+          console.log e
+          atom.confirm
+            message: 'Error occurred'
+            detailedMessage: "An error occurred during git clone:\n#{e.message}\n#{e.stdout}\n\nYou may want to try again or check out your configuration."
+            buttons:
+              Configure: => @configure()
+              Retry: => @doClone()
+
+    return q.fcall () =>
+      if isBitbucketRepo
+        progress = new ProgressView()
+        progress.initialize()
+
+        modal = atom.workspace.addModalPanel
+          item: progress
+          visible: true
+
+        @lifeCycle.getBitbucketRepoSize()
+          .then (size) =>
+            repoSize = size
+            promise = callGitClone()
+              .then () ->
+                window.clearInterval folderSizeInterval
+                modal.destroy()
+              .fail () ->
+                window.clearInterval folderSizeInterval
+                modal.destroy()
+
+            folderSizeInterval = window.setInterval () =>
+              @lifeCycle.getFolderSize @lifeCycle.whereToClone()
+                .then (size) ->
+                  currentSize = size
+                  console.log "Cloning", currentSize, repoSize
+                  progress.setProgress percentage(currentSize, repoSize)
+                .fail () -> #maybe not yet there
+            , FOLDER_SIZE_INTERVAL
+            return promise
+
+          .fail (e) =>
+            console.log e
+            modal?.destroy()
+            atom.confirm
+              message: 'Error occurred'
+              detailedMessage: "Unable to gather remote repository size.\nYou may want to try again or check out your configuration."
+              buttons:
+                Configure: => @configure()
+                Retry: => @doClone()
+      else
+        return callGitClone()
+
 
   checkUncommittedChanges: () ->
     console.log "checkUncommittedChanges"

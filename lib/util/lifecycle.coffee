@@ -2,6 +2,7 @@ git = require './git'
 path = require 'path'
 moment = require 'moment'
 q = require 'q'
+getFolderSize = require('get-folder-size')
 
 Configuration = require './configuration'
 BitBucketManager = require './bitbucket-manager'
@@ -201,7 +202,7 @@ class LifeCycle
     conf = @configuration.get()
     branches = []
     repoName = getRepoName(conf.repoUrl)
-    prm = new BitBucketManager(conf.username, conf.password)
+    prm = new BitBucketManager(conf.repoUsername, conf.password)
     # First: gather modified branches
     return git.unpushedCommits()
       .then (modifiedBranches) ->
@@ -328,5 +329,26 @@ class LifeCycle
         b = branch
         git.createAndCheckoutBranch branch
       .then () -> return b
+
+  getFolderSize: (folder) ->
+    deferred = q.defer()
+    getFolderSize folder, (err, size)  ->
+      if err
+        deferred.reject err
+      else
+        deferred.resolve size
+
+    return deferred.promise
+
+  isBitbucketRepo: () ->
+    repoUrl = @configuration.get().repoUrl
+    return repoUrl.indexOf '@bitbucket.org' > 0 || repoUrl.indexOf 'bitbucket.org' > 0
+
+  getBitbucketRepoSize: () ->
+    conf = @configuration.get()
+    repoOwner = conf.repoOwner
+    repoName = getRepoName conf.repoUrl
+    bm = new BitBucketManager(conf.repoUsername, conf.password)
+    return bm.getRepoSize(repoOwner, repoName)
 
 module.exports = LifeCycle

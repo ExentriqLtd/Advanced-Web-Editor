@@ -43,6 +43,7 @@ class FormView extends HTMLElement
     td = document.createElement("td")
     field = document.createElement("input") if type != "select"
     field = document.createElement("select") if type == "select"
+    field = document.createElement("progress") if type == "progress"
     field.id = id
 
     @fields.push field
@@ -65,6 +66,10 @@ class FormView extends HTMLElement
         opt.value = option
         opt.text = option
         field.appendChild opt
+
+    if type == "progress"
+      field.setAttribute "value", 0
+      field.setAttribute "max", 100
 
     td.appendChild field
     # console.log "Created field", field, field.id

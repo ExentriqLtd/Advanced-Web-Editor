@@ -1,9 +1,9 @@
 {app} = require 'remote'
 CSON = require('cson')
+path = require 'path'
 
 {File, Directory} = require 'atom'
-FILE_PATH = app.getPath("userData") + "/" + "adv-web-editor.cson"
-keys = ["repoUrl", "fullName", "email", "repoOwner", "username", "password", "cloneDir", "advancedMode"]
+FILE_PATH = path.join(app.getPath("userData"), "adv-web-editor.cson")
 
 class Configuration
   @labels:
@@ -11,7 +11,8 @@ class Configuration
     fullName: "Full Name"
     email: "Your Email",
     repoOwner: "Repository Owner"
-    username: "Username"
+    username: "Username for Branches"
+    repoUsername: "Repository User Name"
     password: "Password"
     cloneDir: "Clone Directory"
     advancedMode: "Advanced Mode"
@@ -21,7 +22,8 @@ class Configuration
     fullName: "Full Name must not be empty"
     email: "Your Email must be a valid email address",
     repoOwner: "Repository Owner must not be empty. It is required for pull requests."
-    username: "Username must not be empty. It is required for pull requests."
+    username: "Username for Branches must not be empty. It is required to identify your branches."
+    repoUsername: "Repository User Name must not be empty. It is required by BitBucket API."
     password: "Password must not be empty. It is required for pull requests."
     cloneDir: "Clone Directory must be set"
     advancedMode: "Advanced Mode"
@@ -53,6 +55,7 @@ class Configuration
     email: @validators.isEmail
     repoOwner: @validators.isNotBlank
     username: @validators.isNotBlank
+    repoUsername: @validators.isNotBlank
     password: @validators.isNotBlank
     cloneDir: @validators.isNotBlank
     advancedMode: @validators.whatever
@@ -126,4 +129,5 @@ class Configuration
       return @conf.repoUrl
     return @conf.repoUrl.substring(0, i + 2) + @conf.username + ":" + @conf.password + "@" + @conf.repoUrl.substring(i+2)
 
+keys = Object.keys(Configuration.labels)
 module.exports = Configuration

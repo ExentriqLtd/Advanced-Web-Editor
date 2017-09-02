@@ -100,4 +100,22 @@ class BitBucketManager
 
     return deferred.promise
 
+  getRepoSize: (repoOwner, repoName) ->
+    deferred = q.defer()
+    url = "#{API_URL}#{repoOwner}/#{repoName}"
+    options =
+      url: url
+      auth: @buildAuth()
+      json: true
+
+    request.get options, (error, response, body) ->
+      console.log options, error, response, body
+      try
+        console.log "API returned:", body
+        deferred.resolve body.size
+      catch error
+        deferred.reject error
+
+    return deferred.promise
+
 module.exports = BitBucketManager
