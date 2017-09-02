@@ -4,7 +4,7 @@ moment = require 'moment'
 q = require 'q'
 
 Configuration = require './configuration'
-BitBucketManager = require './pull-request-manager'
+BitBucketManager = require './bitbucket-manager'
 
 { Directory } = require 'atom'
 { lstatSync, readdirSync, existsSync } = require('fs')
@@ -79,38 +79,38 @@ class LifeCycle
 
   setupToolbar: (toolBar) ->
     console.log "lifeCycle::setupToolbar"
-    toolBar.removeItems()
 
-    toolBar.addButton
-      icon: 'gear',
-      callback: 'advanced-web-editor:configure',
-      tooltip: 'Configure'
-      priority: 86
+    if ! (@startBtn && @saveBtn && @publishBtn)
+      toolBar.addButton
+        icon: 'gear',
+        callback: 'advanced-web-editor:configure',
+        tooltip: 'Configure'
+        priority: 86
 
-    toolBar.addSpacer
-      priority: 87
+      toolBar.addSpacer
+        priority: 87
 
-    startBtn = toolBar.addButton
-      icon: 'zap',
-      callback: 'advanced-web-editor:start',
-      tooltip: 'Start Editing'
-      priority: 88
+      @startBtn = toolBar.addButton
+        icon: 'zap',
+        callback: 'advanced-web-editor:start',
+        tooltip: 'Start Editing'
+        priority: 88
 
-    saveBtn = toolBar.addButton
-      icon: 'database',
-      callback: 'advanced-web-editor:save',
-      tooltip: 'Save Locally'
-      priority: 89
+      @saveBtn = toolBar.addButton
+        icon: 'database',
+        callback: 'advanced-web-editor:save',
+        tooltip: 'Save Locally'
+        priority: 89
 
-    publishBtn = toolBar.addButton
-      icon: 'cloud-upload',
-      callback: 'advanced-web-editor:publish',
-      tooltip: 'Publish'
-      priority: 90
+      @publishBtn = toolBar.addButton
+        icon: 'cloud-upload',
+        callback: 'advanced-web-editor:publish',
+        tooltip: 'Publish'
+        priority: 90
 
-    startBtn.setEnabled @status == STATUS.READY
-    saveBtn.setEnabled @status == STATUS.STARTED
-    publishBtn.setEnabled @status == STATUS.SAVED
+    @startBtn.setEnabled @status == STATUS.READY
+    @saveBtn.setEnabled @status == STATUS.STARTED
+    @publishBtn.setEnabled @status == STATUS.SAVED
 
   getConfiguration: () ->
     return @configuration
