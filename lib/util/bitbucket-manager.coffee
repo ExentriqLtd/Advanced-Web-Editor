@@ -21,7 +21,7 @@ transformBranchResponse = (body) ->
     return []
   return body.values.map (x) -> x.name
 
-class PullRequestManager
+class BitBucketManager
 
   constructor: (@bitBucketUsername, @bitBucketPassword) ->
 
@@ -72,7 +72,7 @@ class PullRequestManager
             name: toBranch
         close_source_branch: false
 
-    console.log "PullRequestManager::createPullRequest", options
+    console.log "BitBucketManager::createPullRequest", options
 
     request.post options, (error, response, body) ->
       try
@@ -100,4 +100,4 @@ class PullRequestManager
 
     return deferred.promise
 
-module.exports = PullRequestManager
+module.exports = BitBucketManager

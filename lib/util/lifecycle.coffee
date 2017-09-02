@@ -4,7 +4,7 @@ moment = require 'moment'
 q = require 'q'
 
 Configuration = require './configuration'
-PullRequestManager = require './pull-request-manager'
+BitBucketManager = require './pull-request-manager'
 
 { Directory } = require 'atom'
 { lstatSync, readdirSync, existsSync } = require('fs')
@@ -201,7 +201,7 @@ class LifeCycle
     conf = @configuration.get()
     branches = []
     repoName = getRepoName(conf.repoUrl)
-    prm = new PullRequestManager(conf.username, conf.password)
+    prm = new BitBucketManager(conf.username, conf.password)
     # First: gather modified branches
     return git.unpushedCommits()
       .then (modifiedBranches) ->
