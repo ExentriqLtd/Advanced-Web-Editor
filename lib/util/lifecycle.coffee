@@ -197,7 +197,39 @@ class LifeCycle
       @status = STATUS.SAVED
       atom.notifications.addSuccess("Changes have been saved succesfully. Publish them when you are ready.")
 
+  #publish current branch only
   doPublish: () ->
+    git.setProjectIndex @indexOfProject()
+    conf = @configuration.get()
+    repoName = getRepoName(conf.repoUrl)
+    prm = new BitBucketManager(conf.repoUsername, conf.password)
+    branch = git.getLocalBranch()
+    willOpenPr = false
+    console.log "Local branch is:", branch
+
+    return prm.getPullRequests(conf.repoOwner, repoName)
+      .then (pullRequests) ->
+        console.log "Pull requests", pullRequests
+        # Filter out branches if pull requests are pending already
+        list = pullRequests.map (pr) -> pr.from
+        branches = list.filter (b) -> b == branch
+        willOpenPr = branches.length == 0
+      .then () ->
+        git.push '', ''
+      .then () =>
+        console.log "Will open PR for", branch, willOpenPr
+        # Open PRs for remaining branches towards branch develop
+        if willOpenPr
+          return @openPullRequest(prm, conf.repoOwner, repoName, branch)
+        else
+          return q.fcall () -> null
+      .then (status) =>
+        console.log "Pull requests status", status
+        #Then notify we're ready for another round
+        @status = STATUS.READY
+        atom.notifications.addSuccess("Changes have been published succesfully.")
+
+  doPublishAllBranches: () ->
     git.setProjectIndex @indexOfProject()
     conf = @configuration.get()
     branches = []
@@ -260,9 +292,20 @@ class LifeCycle
       .then () -> git.pull()
 
   getYourBranches: () ->
-    username = @configuration.get()["username"]
-    return @getBranchesByUser(username).then (branches) ->
-      return branches.map (b) -> b.replace 'origin/', ''
+    conf = @configuration.get()
+    username = conf["username"]
+    # console.log username
+
+    if !@isBitbucketRepo() # trust git
+      return @getBranchesByUser(username).then (branches) ->
+        return branches.map (b) -> b.replace 'origin/', ''
+    else #aks API
+      bm = new BitBucketManager(conf.repoUsername, conf.password)
+      repoName = getRepoName(conf.repoUrl)
+      return bm.getBranches(conf.repoOwner, repoName)
+        .then (branches) ->
+          console.log branches, username
+          return branches.filter (b) -> b != "master" && b!= "develop" && b.indexOf("/#{username}/") >= 0
 
   getBranchesByUser: (username) ->
     return git.getBranches().then (branches) ->
@@ -282,8 +325,20 @@ class LifeCycle
 
   suggestNewBranchName: () ->
     console.log "suggestNewBranchName"
-    username = @configuration.get()["username"]
-    return @getBranchesByUser(username).then (userBranches) ->
+    conf = @configuration.get()
+    username = conf["username"]
+    branches = null
+    if !@isBitbucketRepo() # trust git
+      branchesPromise = @getBranchesByUser(username)
+    else
+      bm = new BitBucketManager(conf.repoUsername, conf.password)
+      repoName = getRepoName(conf.repoUrl)
+      branchesPromise = bm.getBranches(conf.repoOwner, repoName)
+        .then (branches) ->
+          console.log branches, username
+          return branches.filter (b) -> b != "master" && b!= "develop" && b.indexOf("/#{username}/") >= 0
+
+    return branchesPromise.then (userBranches) ->
       months = userBranches
         .map (b) ->
           m = b.match branchRegex

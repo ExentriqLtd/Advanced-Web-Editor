@@ -222,24 +222,25 @@ module.exports = AdvancedWebEditor =
 
 
   checkUncommittedChanges: () ->
-    console.log "checkUncommittedChanges"
+    # console.log "checkUncommittedChanges"
     git.setProjectIndex @lifeCycle.indexOfProject()
     return git.status().then (output) -> output && output.length > 0
 
   checkUnpublishedChanges: () ->
-    console.log "checkUnpublishedChanges"
+    # console.log "checkUnpublishedChanges"
     git.setProjectIndex @lifeCycle.indexOfProject()
     return git.unpushedCommits()
 
   statusCheck: () ->
-    console.log "statusCheck ->"
+    # console.log "statusCheck ->"
     q.all [@checkUncommittedChanges(), @checkUnpublishedChanges()]
       .then (results) =>
-        console.log results
+        # console.log results
         if results[0]
           @lifeCycle.statusStarted()
         else if results[1].length > 0
           @lifeCycle.statusSaved()
+
         @lifeCycle.setupToolbar @toolBar
 
   startStatusCheck: () ->
@@ -289,16 +290,22 @@ module.exports = AdvancedWebEditor =
   answerUseBranch: (branch) ->
     @lifeCycle.isBranchRemote(branch).then (isRemote) =>
       branch = "origin/" + branch if isRemote
-      git.checkout(branch, isRemote).then =>
-        git.setProjectIndex @lifeCycle.indexOfProject()
-        @lifeCycle.statusStarted()
-        @lifeCycle.setupToolbar(@toolBar)
-        @modalPanel?.hide()
-        @modalPanel?.destroy()
-        @modalPanel = null
-        @branchView?.destroy()
-        @branchView = null
-        @startStatusCheck()
+      git.setProjectIndex @lifeCycle.indexOfProject()
+      git.checkout(branch, isRemote)
+        .then ->
+          if !isRemote
+            return git.pull '',''
+          else
+            return q.fcall () ->
+        .then =>
+          @lifeCycle.statusStarted()
+          @lifeCycle.setupToolbar(@toolBar)
+          @modalPanel?.hide()
+          @modalPanel?.destroy()
+          @modalPanel = null
+          @branchView?.destroy()
+          @branchView = null
+          @startStatusCheck()
 
   answerCreateNewBranch: () ->
     console.log "Answer: create new branch"
@@ -389,13 +396,26 @@ module.exports = AdvancedWebEditor =
               buttons:
                 Yes: () =>
                   deferred.resolve @doSaveOrPublish(action)
-                'Keep editing': -> deferred.resolve true#do Nothing
+                'Keep editing': =>
+                  if action == 'save'
+                    deferred.resolve true#do Nothing
+                  else
+                    @lifeCycle.checkoutThenUpdate state.branches.sort()[0]
+                      .then () -> deferred.resolve true
+                      .fail (error) -> deferred.reject error
+
         else
           @lifeCycle.statusReady()
-          return @lifeCycle.updateDevelop()
+          return @lifeCycle.updateMaster()
+      .then () =>
+        return @lifeCycle.updateDevelop()
       .then () =>
         atom.notifications.addInfo("Everything is up to date. Start editing when you are ready")
         @lifeCycle.statusReady()
         deferred.resolve true
+      .fail (e) =>
+        console.log e
+        @lifeCycle.statusReady()
+        deferred.reject e
 
       return deferred.promise

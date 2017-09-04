@@ -100,14 +100,17 @@ returnAsIs = (data) -> data
 callGit = (cmd, parser, nodatalog) ->
   logcb "> git #{cmd}"
 
-  return git(cmd, {cwd: cwd})
+  deferred = q.defer()
+  git(cmd, {cwd: cwd})
     .then (data) ->
       logcb data unless nodatalog
-      return parser(data)
+      deferred.resolve parser(data)
     .fail (e) ->
       logcb e.stdout, true
       logcb e.message, true
-      return
+      deferred.reject e
+
+  return deferred.promise
 
 module.exports =
   isInitialised: ->
@@ -214,9 +217,9 @@ module.exports =
       return parseDefault(data)
 
   pull: ->
-    return callGit "pull", (data) ->
-      atomRefresh()
-      return parseDefault(data)
+    return callGit "pull", returnAsIs
+      # atomRefresh()
+      # return parseDefault(data)
 
   flow: (type,action,branch) ->
     return callGit "flow #{type} #{action} #{branch}", (data) ->
@@ -227,9 +230,9 @@ module.exports =
     forced = if force then "-f" else ""
     upstream = if setUpstream then "--set-upstream" else ""
     cmd = "-c push.default=simple push #{upstream} #{remote} #{branch} #{forced} --porcelain"
-    return callGit cmd, (data) ->
-      atomRefresh()
-      return parseDefault(data)
+    return callGit cmd, noop
+      # atomRefresh()
+      # return noop(data)
 
   log: (branch) ->
     return callGit "log origin/#{repo.getUpstreamBranch() or 'master'}..#{branch}", parseDefault

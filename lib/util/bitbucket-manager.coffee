@@ -70,7 +70,7 @@ class BitBucketManager
         destination:
           branch:
             name: toBranch
-        close_source_branch: false
+        close_source_branch: true
 
     console.log "BitBucketManager::createPullRequest", options
 
