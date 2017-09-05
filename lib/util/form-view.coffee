@@ -21,6 +21,21 @@ class FormView extends HTMLElement
   addRow: (row) ->
     @tableBody.appendChild row
 
+  createTitleRow: (title) ->
+    row = document.createElement "tr"
+    h1 = document.createElement "h1"
+    h1.innerText = title
+
+    titleTd = @emptyTd()
+    titleTd.appendChild h1
+    row.appendChild @emptyTd()
+    row.appendChild titleTd
+
+    return row
+
+  emptyTd: () ->
+    return document.createElement 'td'
+
   createFieldRow: (id, type, label, options) ->
     row = document.createElement("tr")
     row.classList.add("native-key-bindings") # workaround Atom bug

@@ -6,6 +6,7 @@ class ConfigurationFormView extends FormView
   initialize: ->
     super
 
+    @addRow @createTitleRow("Editing Tools Configuration")
     @addRow @createFieldRow("repoUrl", "text", Configuration.labels.repoUrl)
     @addRow @createFieldRow("fullName", "text", Configuration.labels.fullName)
     @addRow @createFieldRow("email", "text", Configuration.labels.email)

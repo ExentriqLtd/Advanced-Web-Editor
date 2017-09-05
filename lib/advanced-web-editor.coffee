@@ -44,12 +44,12 @@ module.exports = AdvancedWebEditor =
     # @subscriptions.add atom.workspace.observeTextEditors (editor) ->
     #   console.log editor.getPath()
 
-    @subscriptions.add atom.workspace.observeActivePane (pane) ->
+    @subscriptions.add atom.workspace.onDidChangeActivePaneItem (pane) ->
       console.log pane
 
-    @subscriptions.add atom.project.onDidChangePaths (paths) ->
+    @subscriptions.add atom.project.onDidChangePaths (paths) =>
       console.log "Atom projects path changed", paths
-      console.log atom.project.getRepositories()
+      @lifeCycle.openProjectFolder()
 
     # Check configuration first
     @lifeCycle = new LifeCycle()
@@ -114,20 +114,21 @@ module.exports = AdvancedWebEditor =
     if validationMessages.length == 0
       @lifeCycle.saveConfiguration()
       @lifeCycle.gitConfig confValues["fullName"], confValues["email"]
-        .then () =>
-          @hideConfigure()
-          if @lifeCycle.haveToClone()
-            @askForClone()
-          else
-            @doPreStartCheck()
-              .then () =>
-                @lifeCycle.setupToolbar(@toolBar)
-              .fail (e) =>
-                @lifeCycle.statusReady()
-                @lifeCycle.setupToolbar(@toolBar)
-                console.log e.message, e.stdout
-                atom.notifications.addError "Error occurred during initialization",
-                  description: e.message + "\n" + e.stdout
+        .then () ->
+          atom.restartApplication()
+          # @hideConfigure()
+          # if @lifeCycle.haveToClone()
+          #   @askForClone()
+          # else
+          #   @doPreStartCheck()
+          #     .then () =>
+          #       @lifeCycle.setupToolbar(@toolBar)
+          #     .fail (e) =>
+          #       @lifeCycle.statusReady()
+          #       @lifeCycle.setupToolbar(@toolBar)
+          #       console.log e.message, e.stdout
+          #       atom.notifications.addError "Error occurred during initialization",
+          #         description: e.message + "\n" + e.stdout
     else
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
