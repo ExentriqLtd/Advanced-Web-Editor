@@ -6,7 +6,7 @@ class ProgressView extends FormView
 
   initialize: () ->
     super
-    @addRow @createFieldRow("progress", "progress", "Progress")
+    @addRow @createFieldRow("progress", "progress", "Downloading repository... ")
 
   setProgress: (valuePercent) ->
     progress = @fields.find (f) -> f.getAttribute("type") == "progress"
