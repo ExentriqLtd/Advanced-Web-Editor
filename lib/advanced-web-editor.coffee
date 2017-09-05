@@ -9,7 +9,7 @@ LifeCycle = require './util/lifecycle'
 Configuration = require './util/configuration'
 git = require './util/git'
 
-STATUS_CHECK_INTERVAL = 2500
+STATUS_CHECK_INTERVAL = 7500
 FOLDER_SIZE_INTERVAL = 1500
 
 module.exports = AdvancedWebEditor =
