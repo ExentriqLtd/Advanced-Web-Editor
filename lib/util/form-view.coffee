@@ -56,7 +56,7 @@ class FormView extends HTMLElement
   # {value: 123, text: "XXXX"}
   createField: (id, type, cssClass, options) ->
     td = document.createElement("td")
-    field = document.createElement("input") if type != "select"
+    field = document.createElement("input") if type != "select" || type != "progress"
     field = document.createElement("select") if type == "select"
     field = document.createElement("progress") if type == "progress"
     field.id = id
