@@ -97,7 +97,9 @@ module.exports = AdvancedWebEditor =
     if @panel?
       return
 
-    @configurationView = new ConfigurationView(@lifeCycle.getConfiguration(),
+    configuration = @lifeCycle.getConfiguration()
+    console.log "Configuration", configuration
+    @configurationView = new ConfigurationView(configuration,
       () => @saveConfig(),
       () => @hideConfigure()
     )
@@ -108,7 +110,7 @@ module.exports = AdvancedWebEditor =
     console.log "Save configuration"
     confValues = @configurationView.readConfiguration()
     config = @lifeCycle.getConfiguration()
-    config.set(confValues)
+    config.setValues(confValues)
     validationMessages = config.validateAll().map (k) ->
       Configuration.reasons[k]
     if validationMessages.length == 0

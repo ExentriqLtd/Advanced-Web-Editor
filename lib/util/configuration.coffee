@@ -92,6 +92,9 @@ class Configuration
     # console.log "configuration::set", @conf
     return this
 
+  setValues: (values) ->
+    Object.keys(values).forEach (key) => @conf[key] = values[key]
+
   isHttp: ()->
     return @conf.repoUrl.startsWith("http")
 
