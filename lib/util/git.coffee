@@ -168,7 +168,7 @@ module.exports =
       return parseDefault(data)
 
   clone: (repo, target) ->
-    return callGit "clone -q #{repo} #{target}", parseDefault
+    return callGit "clone -q #{repo} \"#{target}\"", parseDefault
 
   checkout: (branch, remote) ->
     return callGit "checkout #{if remote then '--track ' else ''}#{branch}", (data) ->
