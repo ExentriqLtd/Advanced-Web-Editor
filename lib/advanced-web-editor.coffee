@@ -356,6 +356,7 @@ module.exports = AdvancedWebEditor =
       @lifeCycle.setupToolbar(@toolBar)
 
   doPreStartCheck: () ->
+    keepEditing = false
     deferred = q.defer()
     @lifeCycle.openProjectFolder()
     @lifeCycle.checkUncommittedChanges()
@@ -393,20 +394,26 @@ module.exports = AdvancedWebEditor =
                   deferred.resolve @doSaveOrPublish(action)
                 'Keep editing': =>
                   if action == 'save'
-                    deferred.resolve true#do Nothing
+                    #
                   else
                     @lifeCycle.checkoutThenUpdate state.branches.sort()[0]
                       .then () -> deferred.resolve true
                       .fail (error) -> deferred.reject error
 
+                  @lifeCycle.statusStarted()
+                  @startStatusCheck()
+                  keepEditing = true
+                  deferred.resolve true
+
         else
           @lifeCycle.statusReady()
           return @lifeCycle.updateMaster()
       .then () =>
-        return @lifeCycle.updateDevelop()
+        return @lifeCycle.updateDevelop() if !keepEditing
       .then () =>
-        atom.notifications.addInfo("Everything is up to date. Start editing when you are ready")
-        @lifeCycle.statusReady()
+        if !keepEditing
+          atom.notifications.addInfo("Everything is up to date. Start editing when you are ready")
+          @lifeCycle.statusReady()
         deferred.resolve true
       .fail (e) =>
         console.log e
