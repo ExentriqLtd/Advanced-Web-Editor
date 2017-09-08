@@ -326,12 +326,12 @@ class LifeCycle
       console.log branches, isRemote, isLocal, branch
       return isRemote && !isLocal
 
-  suggestNewBranchName: () ->
+  suggestNewBranchName: (dontAskBitbucket) ->
     console.log "suggestNewBranchName"
     conf = @configuration.get()
     username = conf["username"]
     branches = null
-    if !@isBitbucketRepo() # trust git
+    if dontAskBitbucket || !@isBitbucketRepo() # trust git
       branchesPromise = @getBranchesByUser(username)
     else
       bm = new BitBucketManager(conf.repoUsername, conf.password)
@@ -341,7 +341,7 @@ class LifeCycle
           console.log branches, username
           return branches.filter (b) -> b != "master" && b!= "develop" && b.indexOf("/#{username}/") >= 0
 
-    return branchesPromise.then (userBranches) ->
+    return git.fetch().then () -> branchesPromise.then (userBranches) ->
       months = userBranches
         .map (b) ->
           m = b.match branchRegex
@@ -382,7 +382,7 @@ class LifeCycle
 
   newBranchThenSwitch: () ->
     b = ""
-    @suggestNewBranchName()
+    @suggestNewBranchName(true)
       .then (branch) ->
         b = branch
         git.createAndCheckoutBranch branch
