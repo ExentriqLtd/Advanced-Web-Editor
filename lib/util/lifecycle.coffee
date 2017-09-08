@@ -7,11 +7,12 @@ getFolderSize = require('get-folder-size')
 Configuration = require './configuration'
 BitBucketManager = require './bitbucket-manager'
 
-{ Directory } = require 'atom'
+{ Directory, File } = require 'atom'
 { lstatSync, readdirSync, existsSync } = require('fs')
 { join } = require('path')
 branchRegex = /origin\/feature\/(\d+)\/(\w+)\/(\d+)/
 TODAY_FORMAT = "MMM d YYYY - HH:mm"
+FORBIDDEN_BRANCHES = ["master", "develop"]
 STATUS =
   'INIT': 0
   'READY': 1
@@ -57,10 +58,12 @@ class LifeCycle
   statusReady: () ->
     console.log "lifeCycle::statusReady"
     @status = STATUS.READY
+    @_stopObservingBranchSwitch()
 
   statusStarted: () ->
     console.log "lifeCycle::statusStarted"
     @status = STATUS.STARTED
+    @_observeBranchSwitch()
 
   statusStarting: () ->
     console.log "lifeCycle::statusStarting"
@@ -405,5 +408,29 @@ class LifeCycle
     repoName = getRepoName conf.repoUrl
     bm = new BitBucketManager(conf.repoUsername, conf.password)
     return bm.getRepoSize(repoOwner, repoName)
+
+  checkUncommittedChanges: () ->
+    # console.log "checkUncommittedChanges"
+    git.setProjectIndex @indexOfProject()
+    return git.status().then (output) -> output && output.length > 0
+
+  checkUnpublishedChanges: () ->
+    # console.log "checkUnpublishedChanges"
+    git.setProjectIndex @indexOfProject()
+    return git.unpushedCommits()
+      .then (branches) -> branches.filter (b) -> b not in FORBIDDEN_BRANCHES
+
+  _observeBranchSwitch: () ->
+    if @branchFileDisposable?
+      return
+    filePath = path.join(@whereToClone(), '.git', 'HEAD')
+    console.log "Going to observe #{filePath}"
+    branchFile = new File(filePath, false)
+    @branchFileDisposable = branchFile.onDidChange () ->
+      branchFile.read().then (content) -> console.log "Switch happened", content
+      #TODO: forbid switch to master and develop
+
+  _stopObservingBranchSwitch: () ->
+    @branchFileDisposable?.dispose()
 
 module.exports = LifeCycle

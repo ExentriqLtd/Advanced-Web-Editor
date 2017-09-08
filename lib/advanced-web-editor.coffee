@@ -44,12 +44,15 @@ module.exports = AdvancedWebEditor =
     # @subscriptions.add atom.workspace.observeTextEditors (editor) ->
     #   console.log editor.getPath()
 
-    @subscriptions.add atom.workspace.onDidChangeActivePaneItem (pane) ->
-      console.log pane
+    # @subscriptions.add atom.workspace.onDidChangeActivePaneItem (pane) ->
+    #   console.log pane
 
     @subscriptions.add atom.project.onDidChangePaths (paths) =>
       console.log "Atom projects path changed", paths
       @lifeCycle.openProjectFolder()
+
+    @subscriptions.add atom.workspace.onDidChangeActiveTextEditor (editor) ->
+      console.log "Active text editor is now", editor
 
     # Check configuration first
     @lifeCycle = new LifeCycle()
@@ -223,20 +226,9 @@ module.exports = AdvancedWebEditor =
       else
         return callGitClone()
 
-
-  checkUncommittedChanges: () ->
-    # console.log "checkUncommittedChanges"
-    git.setProjectIndex @lifeCycle.indexOfProject()
-    return git.status().then (output) -> output && output.length > 0
-
-  checkUnpublishedChanges: () ->
-    # console.log "checkUnpublishedChanges"
-    git.setProjectIndex @lifeCycle.indexOfProject()
-    return git.unpushedCommits()
-
   statusCheck: () ->
     # console.log "statusCheck ->"
-    q.all [@checkUncommittedChanges(), @checkUnpublishedChanges()]
+    q.all [@lifeCycle.checkUncommittedChanges(), @lifeCycle.checkUnpublishedChanges()]
       .then (results) =>
         # console.log results
         if results[0]
@@ -366,14 +358,14 @@ module.exports = AdvancedWebEditor =
   doPreStartCheck: () ->
     deferred = q.defer()
     @lifeCycle.openProjectFolder()
-    @checkUncommittedChanges()
+    @lifeCycle.checkUncommittedChanges()
       .then (state) =>
         if state
           return {
             state: "unsaved"
           }
         else
-          @checkUnpublishedChanges()
+          @lifeCycle.checkUnpublishedChanges()
             .then (unpublishedBranches) ->
               # console.log unpublishedBranches
               if unpublishedBranches.length > 0
