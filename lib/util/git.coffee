@@ -2,8 +2,14 @@ fs = require 'fs'
 path = require 'path'
 moment = require 'moment'
 
+{ File } = require 'atom'
+
 git = require 'git-promise'
 q = require 'q'
+
+LOCK_POLL_INTERVAL = 500
+LOCK_MAX_RETRIES = 20
+FORBIDDEN_BRANCHES = ["master", "develop"]
 
 logcb = (log, error) ->
   console[if error then 'error' else 'log'] log
@@ -13,6 +19,35 @@ cwd = undefined
 projectIndex = 0
 
 noop = -> q.fcall -> true
+
+lockFile = () -> path.join(cwd, '.git', 'index.lock')
+
+lockFileExists = () ->
+  lock = new File(lockFile())
+  return lock.existsSync()
+
+checkLockFileDoesntExist = () ->
+  deferred = q.defer()
+  retries = 0
+  interval = window.setInterval () ->
+    # console.log "Lock file exists?"
+    if retries >= LOCK_MAX_RETRIES
+      # console.log "Giving up"
+      window.clearInterval interval
+      deferred.reject()
+      return
+
+    if !lockFileExists()
+      # console.log "No"
+      window.clearInterval interval
+      deferred.resolve()
+    # else
+      # console.log "Yes"
+
+    retries++
+  , LOCK_MAX_RETRIES
+
+  return deferred.promise
 
 atomRefresh = ->
   repo.refreshStatus() # not public/in docs
@@ -101,14 +136,19 @@ callGit = (cmd, parser, nodatalog) ->
   logcb "> git #{cmd}"
 
   deferred = q.defer()
-  git(cmd, {cwd: cwd})
-    .then (data) ->
-      logcb data unless nodatalog
-      deferred.resolve parser(data)
-    .fail (e) ->
-      logcb e.stdout, true
-      logcb e.message, true
-      deferred.reject e
+
+  checkLockFileDoesntExist()
+    .then () ->
+      git(cmd, {cwd: cwd})
+        .then (data) ->
+          logcb data unless nodatalog
+          deferred.resolve parser(data)
+        .fail (e) ->
+          logcb e.stdout, true
+          logcb e.message, true
+          deferred.reject e
+    .fail () ->
+      deferred.reject message: "Git project directory is locked. You may try to delete #{lockFile()} manually"
 
   return deferred.promise
 
@@ -278,12 +318,16 @@ module.exports =
   unpushedCommits: () ->
     # get all local branches
     return getBranches().then (branches) =>
-      return q.all(branches.local.map((branch) =>
-        return @unpushedCommitBranch(branch)
-          .then (hasCommits) ->
-            return if hasCommits then branch else undefined
-            )).then (branches)->
-              return branches.filter (x) -> x
+      return q.all(branches.local.filter (x) -> x not in FORBIDDEN_BRANCHES
+        .map((branch) =>
+          return @unpushedCommitBranch(branch)
+            .then (hasCommits) ->
+              return if hasCommits then branch else undefined
+              )).then (branches)->
+                return branches.filter (x) -> x
+
+  isCurrentBranchForbidden: () ->
+    return repo.getShortHead() in FORBIDDEN_BRANCHES
 
   pushAll: () ->
     return callGit "-c push.default=simple push --all origin --porcelain", parseDefault

@@ -410,12 +410,14 @@ class LifeCycle
     return bm.getRepoSize(repoOwner, repoName)
 
   checkUncommittedChanges: () ->
-    # console.log "checkUncommittedChanges"
+    console.log "checkUncommittedChanges"
     git.setProjectIndex @indexOfProject()
+    if git.isCurrentBranchForbidden()
+      return q.fcall () -> false
     return git.status().then (output) -> output && output.length > 0
 
   checkUnpublishedChanges: () ->
-    # console.log "checkUnpublishedChanges"
+    console.log "checkUnpublishedChanges"
     git.setProjectIndex @indexOfProject()
     return git.unpushedCommits()
       .then (branches) -> branches.filter (b) -> b not in FORBIDDEN_BRANCHES
