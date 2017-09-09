@@ -23,6 +23,8 @@ noop = -> q.fcall -> true
 lockFile = () -> path.join(cwd, '.git', 'index.lock')
 
 lockFileExists = () ->
+  if !cwd
+    return false
   lock = new File(lockFile())
   return lock.existsSync()
 
