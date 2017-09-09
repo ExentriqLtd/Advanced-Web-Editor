@@ -336,12 +336,12 @@ module.exports =
 
   #Git, create a branch and publish immediately:
   createAndCheckoutBranch: (branch) ->
-    return callGit "checkout -b '#{branch}'", parseDefault
+    return callGit "checkout -b \"#{branch}\"", parseDefault
       .then () ->
-        return callGit "push --set-upstream origin '#{branch}'", parseDefault
+        return callGit "push --set-upstream origin \"#{branch}\"", parseDefault
 
   tag: (name,href,msg) ->
-    return callGit "tag -a #{name} -m '#{msg}' #{href}", (data) ->
+    return callGit "tag -a #{name} -m \"#{msg}\" #{href}", (data) ->
       atomRefresh()
       return parseDefault(data)
 

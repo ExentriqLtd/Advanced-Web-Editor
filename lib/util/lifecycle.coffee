@@ -302,13 +302,13 @@ class LifeCycle
     if !@isBitbucketRepo() # trust git
       return @getBranchesByUser(username).then (branches) ->
         return branches.map (b) -> b.replace 'origin/', ''
-    else #aks API
+    else #ask API
       bm = new BitBucketManager(conf.repoUsername, conf.password)
       repoName = getRepoName(conf.repoUrl)
       return bm.getBranches(conf.repoOwner, repoName)
         .then (branches) ->
           console.log branches, username
-          return branches.filter (b) -> b != "master" && b!= "develop" && b.indexOf("/#{username}/") >= 0
+          return branches.filter (b) -> (b not in FORBIDDEN_BRANCHES) && b.indexOf("/#{username}/") >= 0
 
   getBranchesByUser: (username) ->
     return git.getBranches().then (branches) ->
@@ -339,7 +339,7 @@ class LifeCycle
       branchesPromise = bm.getBranches(conf.repoOwner, repoName)
         .then (branches) ->
           console.log branches, username
-          return branches.filter (b) -> b != "master" && b!= "develop" && b.indexOf("/#{username}/") >= 0
+          return branches.filter (b) -> (b not in FORBIDDEN_BRANCHES) && b.indexOf("/#{username}/") >= 0
 
     return git.fetch().then () -> branchesPromise.then (userBranches) ->
       months = userBranches
