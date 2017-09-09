@@ -200,9 +200,16 @@ module.exports = AdvancedWebEditor =
               .then () ->
                 window.clearInterval folderSizeInterval
                 modal.destroy()
-              .fail () ->
+                atom.restartApplication()
+              .fail () =>
                 window.clearInterval folderSizeInterval
                 modal.destroy()
+                atom.confirm
+                  message: 'Error occurred'
+                  detailedMessage: "Unable to download the project.\nYou may want to try again or check out your configuration."
+                  buttons:
+                    Configure: => @configure()
+                    Retry: => @doClone()
 
             folderSizeInterval = window.setInterval () =>
               @lifeCycle.getFolderSize @lifeCycle.whereToClone()
