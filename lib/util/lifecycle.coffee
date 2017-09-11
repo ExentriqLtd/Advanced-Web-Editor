@@ -50,6 +50,7 @@ getRepoName = (uri) ->
     name
 
 class LifeCycle
+  currentBranch: null
 
   constructor: () ->
     @configuration = new Configuration()
@@ -386,8 +387,9 @@ class LifeCycle
   newBranchThenSwitch: () ->
     b = ""
     @suggestNewBranchName(true)
-      .then (branch) ->
+      .then (branch) =>
         b = branch
+        @currentBranch = branch
         git.createAndCheckoutBranch branch
       .then () -> return b
 
@@ -435,11 +437,22 @@ class LifeCycle
     filePath = path.join(@whereToClone(), '.git', 'HEAD')
     console.log "Going to observe #{filePath}"
     branchFile = new File(filePath, false)
-    @branchFileDisposable = branchFile.onDidChange () ->
-      branchFile.read().then (content) -> console.log "Switch happened", content
-      #TODO: forbid switch to master and develop
+    @branchFileDisposable = branchFile.onDidChange () =>
+      branchFile.read()
+        .then (content) =>
+          branchName = content.replace('ref: refs/heads/', '').trim()
+          console.log "Switch happened", branchName, branchName in FORBIDDEN_BRANCHES
+          if branchName in FORBIDDEN_BRANCHES || !@configuration.get().advancedMode
+            console.log "Reverting switch to", @currentBranch
+            git.checkout @currentBranch
+          else
+            console.log "Switch permitted"
+            @currentBranch = branchName
 
   _stopObservingBranchSwitch: () ->
     @branchFileDisposable?.dispose()
+
+  closeAllEditors: () ->
+    atom.workspace.getTextEditors().forEach (t) -> t.destroy()
 
 module.exports = LifeCycle

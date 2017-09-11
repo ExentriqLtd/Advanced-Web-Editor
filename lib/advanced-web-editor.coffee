@@ -45,7 +45,7 @@ module.exports = AdvancedWebEditor =
     @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:publish': => @commandPublish()
 
     # Close every text editor on startup
-    atom.workspace.getTextEditors().forEach (t) -> t.destroy()
+    @lifeCycle.closeAllEditors()
 
     # Listen to project folders. In basic mode, only project folder is allowed
     @subscriptions.add atom.project.onDidChangePaths (paths) =>
@@ -298,6 +298,7 @@ module.exports = AdvancedWebEditor =
   answerUseBranch: (branch) ->
     @lifeCycle.isBranchRemote(branch).then (isRemote) =>
       branch = "origin/" + branch if isRemote
+      @lifeCycle.currentBranch = branch
       git.setProjectIndex @lifeCycle.indexOfProject()
       git.checkout(branch, isRemote)
         .then ->
@@ -359,6 +360,7 @@ module.exports = AdvancedWebEditor =
     @lifeCycle.statusPublishing()
     @lifeCycle.setupToolbar(@toolBar)
     @lifeCycle.doPublish().then () =>
+      @lifeCycle.closeAllEditors()
       @lifeCycle.statusReady()
       @stopStatusCheck()
       @lifeCycle.setupToolbar(@toolBar)
