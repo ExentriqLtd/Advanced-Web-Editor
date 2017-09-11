@@ -81,6 +81,9 @@ class LifeCycle
     console.log "lifeCycle::statusPublishing"
     @status = STATUS.PUBLISHING
 
+  canOpenTextEditors: () ->
+    return @status >= STATUS.STARTING
+
   setupToolbar: (toolBar) ->
     console.log "lifeCycle::setupToolbar"
 
@@ -421,6 +424,10 @@ class LifeCycle
     git.setProjectIndex @indexOfProject()
     return git.unpushedCommits()
       .then (branches) -> branches.filter (b) -> b not in FORBIDDEN_BRANCHES
+
+  isPathFromProject: (path) ->
+    root = @whereToClone()
+    return path.indexOf(root) >= 0
 
   _observeBranchSwitch: () ->
     if @branchFileDisposable?
