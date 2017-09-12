@@ -56,7 +56,7 @@ class LifeCycle
     @configuration = new Configuration()
     @status = STATUS.INIT
     if @configuration.exists() && @configuration.isValid()
-      git.setProjectIndex @indexOfProject
+      git.setProjectIndex @indexOfProject()
       @currentBranch = git.getCurrentBranch()
 
   statusReady: () ->
