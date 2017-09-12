@@ -297,14 +297,17 @@ module.exports = AdvancedWebEditor =
     @lifeCycle.getYourBranches()
       .then (branches) =>
         # console.log branches
-        @branchView = new BranchView(
-          branches,
-          (branch) => @answerUseBranch branch,
-          () => @answerCreateNewBranch()
-        )
-        @modalPanel = atom.workspace.addModalPanel
-          item: @branchView
-          visible: true
+        if branches.length > 0
+          @branchView = new BranchView(
+            branches,
+            (branch) => @answerUseBranch branch,
+            () => @answerCreateNewBranch()
+          )
+          @modalPanel = atom.workspace.addModalPanel
+            item: @branchView
+            visible: true
+        else
+          @answerCreateNewBranch()
 
   answerUseBranch: (branch) ->
     @lifeCycle.isBranchRemote(branch).then (isRemote) =>
