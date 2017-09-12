@@ -85,6 +85,9 @@ class LifeCycle
   canOpenTextEditors: () ->
     return @status >= STATUS.STARTING
 
+  canCheckGitStatus: () ->
+    return @status >= STATUS.STARTED && @status != STATUS.SAVING && @status != STATUS.PUBLISHING
+
   setupToolbar: (toolBar) ->
     console.log "lifeCycle::setupToolbar"
 

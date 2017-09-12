@@ -9,7 +9,7 @@ LifeCycle = require './util/lifecycle'
 Configuration = require './util/configuration'
 git = require './util/git'
 
-STATUS_CHECK_INTERVAL = 7500
+STATUS_CHECK_INTERVAL = 25000
 FOLDER_SIZE_INTERVAL = 1500
 
 module.exports = AdvancedWebEditor =
@@ -19,6 +19,7 @@ module.exports = AdvancedWebEditor =
   modalPanel: null
   subscriptions: null
   statusCheckInterval: -1
+  editorHandle: null
 
   consumeToolBar: (getToolBar) ->
     @toolBar = getToolBar('advanced-web-editor')
@@ -56,10 +57,16 @@ module.exports = AdvancedWebEditor =
     @subscriptions.add atom.workspace.observeActiveTextEditor (editor) =>
       console.log "Active text editor is now", editor
       if !editor
+        @editorHandle?.dispose()
+        @editorHandle = null
         return
       path = editor.getPath()
-      if @lifeCycle.isPathFromProject(path) && !@lifeCycle.canOpenTextEditors()
-        @commandStartEditing()
+      if @lifeCycle.isPathFromProject(path)
+        @editorHandle?.dispose()
+        @editorHandle = editor.onDidSave () =>
+          @statusCheck()
+        if !@lifeCycle.canOpenTextEditors()
+          @commandStartEditing()
 
     # Check configuration first
     @lifeCycle.setupToolbar(@toolBar) if @toolBar?
@@ -241,6 +248,10 @@ module.exports = AdvancedWebEditor =
 
   statusCheck: () ->
     # console.log "statusCheck ->"
+    if !@lifeCycle.canCheckGitStatus()
+      console.log "Status check: operations in progress. Skipping."
+      return
+
     q.all [@lifeCycle.checkUncommittedChanges(), @lifeCycle.checkUnpublishedChanges()]
       .then (results) =>
         # console.log results
@@ -314,7 +325,7 @@ module.exports = AdvancedWebEditor =
           @modalPanel = null
           @branchView?.destroy()
           @branchView = null
-          @startStatusCheck()
+          # @startStatusCheck()
 
   answerCreateNewBranch: () ->
     console.log "Answer: create new branch"
@@ -330,7 +341,7 @@ module.exports = AdvancedWebEditor =
       .then (branch) =>
         @lifeCycle.statusStarted()
         @lifeCycle.setupToolbar(@toolBar)
-        @startStatusCheck()
+        # @startStatusCheck()
         atom.notifications.addInfo("Created branch #{branch}")
       .fail (e) -> atom.notifications.addError "Error occurred",
         description: e.message + "\n" + e.stdout
@@ -341,8 +352,8 @@ module.exports = AdvancedWebEditor =
 
   commandSaveLocally: () ->
     console.log "Command: Save Locally"
-    git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusSaving()
+    git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.setupToolbar(@toolBar)
     @lifeCycle.doCommit()
       .then () =>
@@ -416,7 +427,7 @@ module.exports = AdvancedWebEditor =
                       .fail (error) -> deferred.reject error
 
                   @lifeCycle.statusStarted()
-                  @startStatusCheck()
+                  # @startStatusCheck()
                   keepEditing = true
                   deferred.resolve true
 
