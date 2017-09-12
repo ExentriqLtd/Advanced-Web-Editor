@@ -441,6 +441,7 @@ class LifeCycle
     return path.indexOf(root) >= 0
 
   _observeBranchSwitch: () ->
+    console.log "_observeBranchSwitch"
     if @branchFileDisposable?
       return
     filePath = path.join(@whereToClone(), '.git', 'HEAD')
@@ -459,6 +460,7 @@ class LifeCycle
             @currentBranch = branchName
 
   _stopObservingBranchSwitch: () ->
+    console.log "_stopObservingBranchSwitch"
     @branchFileDisposable?.dispose()
 
   closeAllEditors: () ->
