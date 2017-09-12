@@ -18,6 +18,8 @@ repo = undefined
 cwd = undefined
 projectIndex = 0
 
+now = -> moment().format("MMM DD YYYY")
+
 noop = -> q.fcall -> true
 
 lockFile = () -> path.join(cwd, '.git', 'index.lock')
@@ -201,11 +203,15 @@ module.exports =
       atomRefresh()
       return parseDefault(data)
 
+  commitAll: () ->
+    message = now()
+    return callGit "commit -a -m \"#{message}\"", parseDefault
+
   commit: (message) ->
-    message = message or moment().format("MMM DD YYYY")
+    message = message or now()
     message = message.replace(/"/g, '\\"')
 
-    return callGit "commit --allow-empty-message -m \"#{message}\"", (data) ->
+    return callGit "commit -m \"#{message}\"", (data) ->
       atomRefresh()
       return parseDefault(data)
 

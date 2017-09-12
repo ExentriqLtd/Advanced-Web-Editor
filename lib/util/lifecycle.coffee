@@ -187,6 +187,12 @@ class LifeCycle
 
   doCommit: () ->
     git.setProjectIndex @indexOfProject()
+    return git.commitAll().then () =>
+      @status = STATUS.SAVED
+      atom.notifications.addSuccess("Changes have been saved succesfully. Publish them when you are ready.")
+
+  doTraditionalCommit: () ->
+    git.setProjectIndex @indexOfProject()
 
     return git.status().then (files) ->
       return files
