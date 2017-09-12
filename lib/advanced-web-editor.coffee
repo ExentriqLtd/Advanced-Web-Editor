@@ -420,7 +420,7 @@ module.exports = AdvancedWebEditor =
           action = 'publish' if state.state == 'unpublished'
           branches = ''
           branches = "Involved branches: " + state.branches.join(",") + ".\n" if state.branches?
-          
+
           atom.confirm
             message: "Detected #{state.state} changes."
             detailedMessage: "#{branches}Do you want to #{action} them now?"
@@ -441,7 +441,6 @@ module.exports = AdvancedWebEditor =
                 deferred.resolve true
 
         else
-          @lifeCycle.statusReady()
           return @lifeCycle.updateMaster()
       .then () =>
         return @lifeCycle.updateDevelop() if !keepEditing
