@@ -420,25 +420,25 @@ module.exports = AdvancedWebEditor =
           action = 'publish' if state.state == 'unpublished'
           branches = ''
           branches = "Involved branches: " + state.branches.join(",") + ".\n" if state.branches?
-          if state != "ok"
-            atom.confirm
-              message: "Detected #{state.state} changes."
-              detailedMessage: "#{branches}Do you want to #{action} them now?"
-              buttons:
-                Yes: () =>
-                  deferred.resolve @doSaveOrPublish(action)
-                'Keep editing': =>
-                  if action == 'save'
-                    #
-                  else
-                    @lifeCycle.checkoutThenUpdate state.branches.sort()[0]
-                      .then () -> deferred.resolve true
-                      .fail (error) -> deferred.reject error
+          
+          atom.confirm
+            message: "Detected #{state.state} changes."
+            detailedMessage: "#{branches}Do you want to #{action} them now?"
+            buttons:
+              Yes: () =>
+                deferred.resolve @doSaveOrPublish(action)
+              'Keep editing': =>
+                if action == 'save'
+                  #
+                else
+                  @lifeCycle.checkoutThenUpdate state.branches.sort()[0]
+                    .then () -> deferred.resolve true
+                    .fail (error) -> deferred.reject error
 
-                  @lifeCycle.statusStarted()
-                  # @startStatusCheck()
-                  keepEditing = true
-                  deferred.resolve true
+                @lifeCycle.statusStarted()
+                # @startStatusCheck()
+                keepEditing = true
+                deferred.resolve true
 
         else
           @lifeCycle.statusReady()
@@ -449,6 +449,8 @@ module.exports = AdvancedWebEditor =
         if !keepEditing
           atom.notifications.addInfo("Everything is up to date. Start editing when you are ready")
           @lifeCycle.statusReady()
+        else
+          @statusCheck()
         deferred.resolve true
       .fail (e) =>
         console.log e

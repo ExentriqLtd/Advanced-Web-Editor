@@ -337,6 +337,9 @@ module.exports =
   isCurrentBranchForbidden: () ->
     return repo.getShortHead() in FORBIDDEN_BRANCHES
 
+  getCurrentBranch: () ->
+    return repo?.getShortHead()
+
   pushAll: () ->
     return callGit "-c push.default=simple push --all origin --porcelain", parseDefault
 

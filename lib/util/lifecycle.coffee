@@ -55,6 +55,9 @@ class LifeCycle
   constructor: () ->
     @configuration = new Configuration()
     @status = STATUS.INIT
+    if @configuration.exists() && @configuration.isValid()
+      git.setProjectIndex @indexOfProject
+      @currentBranch = git.getCurrentBranch()
 
   statusReady: () ->
     console.log "lifeCycle::statusReady"
@@ -462,6 +465,7 @@ class LifeCycle
   _stopObservingBranchSwitch: () ->
     console.log "_stopObservingBranchSwitch"
     @branchFileDisposable?.dispose()
+    @branchFileDisposable = null
 
   closeAllEditors: () ->
     atom.workspace.getTextEditors().forEach (t) -> t.destroy()
