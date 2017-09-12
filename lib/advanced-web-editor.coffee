@@ -262,14 +262,14 @@ module.exports = AdvancedWebEditor =
 
         @lifeCycle.setupToolbar @toolBar
 
-  startStatusCheck: () ->
-    @statusCheckInterval= window.setInterval () =>
-      @statusCheck()
-    , STATUS_CHECK_INTERVAL if @statusCheckInterval < 0
-
-  stopStatusCheck: () ->
-    window.clearInterval @statusCheckInterval
-    @statusCheckInterval = -1
+  # startStatusCheck: () ->
+  #   @statusCheckInterval= window.setInterval () =>
+  #     @statusCheck()
+  #   , STATUS_CHECK_INTERVAL if @statusCheckInterval < 0
+  #
+  # stopStatusCheck: () ->
+  #   window.clearInterval @statusCheckInterval
+  #   @statusCheckInterval = -1
 
   doSaveOrPublish: (action) ->
     promise = null
@@ -326,6 +326,14 @@ module.exports = AdvancedWebEditor =
           @branchView?.destroy()
           @branchView = null
           # @startStatusCheck()
+        .fail (error) ->
+          @modalPanel?.hide()
+          @modalPanel?.destroy()
+          @modalPanel = null
+          @branchView?.destroy()
+          @branchView = null
+          atom.notifications.addError "Error occurred",
+            description: e.message + "\n" + e.stdout
 
   answerCreateNewBranch: () ->
     console.log "Answer: create new branch"
@@ -373,7 +381,7 @@ module.exports = AdvancedWebEditor =
     @lifeCycle.doPublish().then () =>
       @lifeCycle.closeAllEditors()
       @lifeCycle.statusReady()
-      @stopStatusCheck()
+      # @stopStatusCheck()
       @lifeCycle.setupToolbar(@toolBar)
     .fail (e) =>
       atom.notifications.addError "Error occurred",
