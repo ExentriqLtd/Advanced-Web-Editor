@@ -90,6 +90,8 @@ module.exports = AdvancedWebEditor =
 
     # You should not open text editor if status is not started
     @subscriptions.add atom.workspace.observeActiveTextEditor (editor) =>
+      if !@lifeCycle.isConfigurationValid()
+        return
       console.log "Active text editor is now", editor
       if !editor
         @editorHandle?.dispose()

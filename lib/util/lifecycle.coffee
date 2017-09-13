@@ -445,7 +445,7 @@ class LifeCycle
 
   isPathFromProject: (p) ->
     root = @whereToClone()
-    return if (p or root) then p.indexOf(root) >= 0 else false
+    return if (p and root) then p.indexOf(root) >= 0 else false
 
   _observeBranchSwitch: () ->
     console.log "_observeBranchSwitch"
