@@ -72,18 +72,22 @@ class LifeCycle
   statusStarting: () ->
     console.log "lifeCycle::statusStarting"
     @status = STATUS.STARTING
+    @_observeBranchSwitch()
 
   statusSaving: () ->
     console.log "lifeCycle::statusSaving"
     @status = STATUS.SAVING
+    @_observeBranchSwitch()
 
   statusSaved: () ->
     console.log "lifeCycle::statusSaved"
     @status = STATUS.SAVED
+    @_observeBranchSwitch()
 
   statusPublishing: () ->
     console.log "lifeCycle::statusPublishing"
     @status = STATUS.PUBLISHING
+    @_observeBranchSwitch()
 
   canOpenTextEditors: () ->
     return @status >= STATUS.STARTING

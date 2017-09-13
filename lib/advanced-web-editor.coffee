@@ -341,6 +341,7 @@ module.exports = AdvancedWebEditor =
 
   answerCreateNewBranch: () ->
     console.log "Answer: create new branch"
+    @lifeCycle.currentBranch = branch
     git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusStarted()
     @modalPanel?.hide()
