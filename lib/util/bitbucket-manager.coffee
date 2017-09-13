@@ -3,6 +3,8 @@ API_URL = 'https://api.bitbucket.org/2.0/repositories/'
 request = require 'request'
 q = require 'q'
 
+PAGE_SIZE = 50
+
 transformResponse = (body) ->
   if !body
     return []
@@ -32,11 +34,8 @@ class BitBucketManager
       "sendImmediately": true
     }
 
-
-  # /maprtech/mapr.com-content/pullrequests
-  getPullRequests: (repoOwner, repoName) ->
+  _get: (url) ->
     deferred = q.defer()
-    url = "#{API_URL}#{repoOwner}/#{repoName}/pullrequests?pagelen=50"
     options =
       url: url
       auth: @buildAuth()
@@ -44,13 +43,44 @@ class BitBucketManager
 
     request.get options, (error, response, body) ->
       try
-        console.log "API returned:", body
-        deferred.resolve transformResponse(body)
+        console.log "_get got", url, body
+        deferred.resolve body
       catch error
         deferred.reject error
 
     return deferred.promise
 
+  invokeTillHasNext: (url, transformFunction) ->
+    deferred = q.defer()
+    location= "#{url}?pagelen=#{PAGE_SIZE}"
+
+    #First invocation to know how many items we have
+    @_get(location).then (body) =>
+      firstPage = transformFunction(body)
+      if !body.next
+        deferred.resolve firstPage
+      else
+        pages = Math.ceil(body.size / PAGE_SIZE)
+        promises = []
+        promises.push(@_get(location + "&page=#{i}")) for i in [2 .. pages]
+
+        q.all(promises).then (resultBodies) ->
+          results = resultBodies.map (x) -> transformFunction(x)
+          toMerge = firstPage.concat(results)
+          deferred.resolve [].concat.apply([], toMerge)
+
+      return deferred.promise
+
+  # /maprtech/mapr.com-content/pullrequests
+  getPullRequests: (repoOwner, repoName) ->
+    deferred = q.defer()
+    url = "#{API_URL}#{repoOwner}/#{repoName}/pullrequests"
+
+    @invokeTillHasNext(url, transformResponse).then (result) ->
+      deferred.resolve result
+
+    return deferred.promise
+    
   createPullRequest: (title, description, repoOwner, repoName, fromBranch, toBranch) ->
     deferred = q.defer()
     url = "#{API_URL}#{repoOwner}/#{repoName}/pullrequests"
@@ -85,18 +115,10 @@ class BitBucketManager
 
   getBranches: (repoOwner, repoName) ->
     deferred = q.defer()
-    url = "#{API_URL}#{repoOwner}/#{repoName}/refs/branches?pagelen=100"
-    options =
-      url: url
-      auth: @buildAuth()
-      json: true
+    url = "#{API_URL}#{repoOwner}/#{repoName}/refs/branches"
 
-    request.get options, (error, response, body) ->
-      try
-        console.log "API returned:", body
-        deferred.resolve transformBranchResponse(body)
-      catch error
-        deferred.reject error
+    @invokeTillHasNext(url, transformBranchResponse).then (result) ->
+      deferred.resolve result
 
     return deferred.promise
 
