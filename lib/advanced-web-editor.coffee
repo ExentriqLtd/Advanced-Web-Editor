@@ -365,16 +365,24 @@ module.exports = AdvancedWebEditor =
 
   commandSaveLocally: () ->
     console.log "Command: Save Locally"
-    @lifeCycle.statusSaving()
     git.setProjectIndex @lifeCycle.indexOfProject()
+    @lifeCycle.statusSaving()
     @lifeCycle.setupToolbar(@toolBar)
-    @lifeCycle.doCommit()
-      .then () =>
-        @lifeCycle.statusSaved()
-        @lifeCycle.setupToolbar(@toolBar)
-      .fail (e) => atom.notifications.addError "Error occurred",
-        description: e.message + "\n" + e.stdout
 
+    @lifeCycle.checkUncommittedChanges().then (hasUncommittedChanges) =>
+      console.log "Has uncommitted changes?", hasUncommittedChanges
+      if hasUncommittedChanges
+        @lifeCycle.doCommit()
+          .then () =>
+            @lifeCycle.statusSaved()
+            @lifeCycle.setupToolbar(@toolBar)
+          .fail (e) => atom.notifications.addError "Error occurred",
+            description: e.message + "\n" + e.stdout
+
+            @lifeCycle.statusStarted()
+            @lifeCycle.setupToolbar(@toolBar)
+      else
+        atom.notifications.addSuccess("Nothing to save at the moment.")
         @lifeCycle.statusStarted()
         @lifeCycle.setupToolbar(@toolBar)
 
