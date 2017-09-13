@@ -44,9 +44,14 @@ class BitBucketManager
     request.get options, (error, response, body) ->
       try
         console.log "_get got", url, body
-        deferred.resolve body
-      catch error
-        deferred.reject error
+        if error
+          deferred.reject "Error occurred, Resource #{url}"
+        else if response && response.statusCode != 200
+          deferred.reject "HTTP error #{response.statusCode}, Resource #{url}"
+        else
+          deferred.resolve body
+      catch e
+        deferred.reject e
 
     return deferred.promise
 
@@ -55,19 +60,22 @@ class BitBucketManager
     location= "#{url}?pagelen=#{PAGE_SIZE}"
 
     #First invocation to know how many items we have
-    @_get(location).then (body) =>
-      firstPage = transformFunction(body)
-      if !body.next
-        deferred.resolve firstPage
-      else
-        pages = Math.ceil(body.size / PAGE_SIZE)
-        promises = []
-        promises.push(@_get(location + "&page=#{i}")) for i in [2 .. pages]
+    @_get(location)
+      .then (body) =>
+        firstPage = transformFunction(body)
+        if !body.next
+          deferred.resolve firstPage
+        else
+          pages = Math.ceil(body.size / PAGE_SIZE)
+          promises = []
+          promises.push(@_get(location + "&page=#{i}")) for i in [2 .. pages]
 
-        q.all(promises).then (resultBodies) ->
-          results = resultBodies.map (x) -> transformFunction(x)
-          toMerge = firstPage.concat(results)
-          deferred.resolve [].concat.apply([], toMerge)
+          q.all(promises).then (resultBodies) ->
+            results = resultBodies.map (x) -> transformFunction(x)
+            toMerge = firstPage.concat(results)
+            deferred.resolve [].concat.apply([], toMerge)
+      .fail (error) ->
+        deferred.reject error
 
       return deferred.promise
 
@@ -78,9 +86,11 @@ class BitBucketManager
 
     @invokeTillHasNext(url, transformResponse).then (result) ->
       deferred.resolve result
+    .fail (error) ->
+      deferred.reject error
 
     return deferred.promise
-    
+
   createPullRequest: (title, description, repoOwner, repoName, fromBranch, toBranch) ->
     deferred = q.defer()
     url = "#{API_URL}#{repoOwner}/#{repoName}/pullrequests"
@@ -119,6 +129,8 @@ class BitBucketManager
 
     @invokeTillHasNext(url, transformBranchResponse).then (result) ->
       deferred.resolve result
+    .fail (error) ->
+      deferred.reject error
 
     return deferred.promise
 
@@ -135,8 +147,8 @@ class BitBucketManager
       try
         console.log "API returned:", body
         deferred.resolve body.size
-      catch error
-        deferred.reject error
+      catch e
+        deferred.reject e
 
     return deferred.promise
 

@@ -308,6 +308,10 @@ module.exports = AdvancedWebEditor =
             visible: true
         else
           @answerCreateNewBranch()
+      .fail (error) ->
+        atom.notifications.addError "Unable to retrieve your branches. Try again later.",
+          description: error
+          dismissable: true
 
   answerUseBranch: (branch) ->
     @lifeCycle.isBranchRemote(branch).then (isRemote) =>
