@@ -32,7 +32,7 @@ module.exports = AdvancedWebEditor =
 
     # Life Cycle manager handles commands and status
     @lifeCycle = new LifeCycle()
-    @lifeCycle.closeAllEditors()
+
     @subscribeToAtomEvents()
     @lifeCycle.setupToolbar(@toolBar) if @toolBar?
 
@@ -41,6 +41,7 @@ module.exports = AdvancedWebEditor =
       console.log "Configuration required"
       @configure()
     else
+      @lifeCycle.closeAllEditors()
       if @lifeCycle.haveToClone()
         @askForClone()
       else

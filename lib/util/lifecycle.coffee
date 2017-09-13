@@ -443,9 +443,9 @@ class LifeCycle
     return git.unpushedCommits()
       .then (branches) -> branches.filter (b) -> b not in FORBIDDEN_BRANCHES
 
-  isPathFromProject: (path) ->
+  isPathFromProject: (p) ->
     root = @whereToClone()
-    return path.indexOf(root) >= 0
+    return if (p or root) then p.indexOf(root) >= 0 else false
 
   _observeBranchSwitch: () ->
     console.log "_observeBranchSwitch"
