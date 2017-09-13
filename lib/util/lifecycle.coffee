@@ -468,6 +468,9 @@ class LifeCycle
     @branchFileDisposable = null
 
   closeAllEditors: () ->
-    atom.workspace.getTextEditors().forEach (t) -> t.destroy()
+    atom.workspace.getTextEditors().forEach (t) =>
+      p = t.getPath()
+      if @isPathFromProject p
+        t.destroy()
 
 module.exports = LifeCycle

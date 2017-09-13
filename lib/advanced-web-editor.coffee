@@ -32,44 +32,11 @@ module.exports = AdvancedWebEditor =
 
     # Life Cycle manager handles commands and status
     @lifeCycle = new LifeCycle()
-
-    # Events subscribed to in atom's system can be easily
-    # cleaned up with a CompositeDisposable
-    @subscriptions = new CompositeDisposable
-
-    # Register command that toggles this view
-    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:configure': => @configure()
-
-    # Register publishing commands
-    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:start': => @commandStartEditing()
-    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:save': => @commandSaveLocally()
-    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:publish': => @commandPublish()
-
-    # Close every text editor on startup
     @lifeCycle.closeAllEditors()
-
-    # Listen to project folders. In basic mode, only project folder is allowed
-    @subscriptions.add atom.project.onDidChangePaths (paths) =>
-      console.log "Atom projects path changed", paths
-      @lifeCycle.openProjectFolder()
-
-    # You should not open text editor if status is not started
-    @subscriptions.add atom.workspace.observeActiveTextEditor (editor) =>
-      console.log "Active text editor is now", editor
-      if !editor
-        @editorHandle?.dispose()
-        @editorHandle = null
-        return
-      path = editor.getPath()
-      if @lifeCycle.isPathFromProject(path)
-        @editorHandle?.dispose()
-        @editorHandle = editor.onDidSave () =>
-          @statusCheck()
-        if !@lifeCycle.canOpenTextEditors()
-          @commandStartEditing()
+    @subscribeToAtomEvents()
+    @lifeCycle.setupToolbar(@toolBar) if @toolBar?
 
     # Check configuration first
-    @lifeCycle.setupToolbar(@toolBar) if @toolBar?
     if !@lifeCycle.isConfigurationValid()
       console.log "Configuration required"
       @configure()
@@ -101,6 +68,39 @@ module.exports = AdvancedWebEditor =
 
   serialize: ->
     # advancedWebEditorViewState: @configurationView.serialize()
+
+  subscribeToAtomEvents: ->
+    # Events subscribed to in atom's system can be easily
+    # cleaned up with a CompositeDisposable
+    @subscriptions = new CompositeDisposable
+
+    # Register command that toggles this view
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:configure': => @configure()
+
+    # Register publishing commands
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:start': => @commandStartEditing()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:save': => @commandSaveLocally()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:publish': => @commandPublish()
+
+    # Listen to project folders. In basic mode, only project folder is allowed
+    @subscriptions.add atom.project.onDidChangePaths (paths) =>
+      console.log "Atom projects path changed", paths
+      @lifeCycle.openProjectFolder()
+
+    # You should not open text editor if status is not started
+    @subscriptions.add atom.workspace.observeActiveTextEditor (editor) =>
+      console.log "Active text editor is now", editor
+      if !editor
+        @editorHandle?.dispose()
+        @editorHandle = null
+        return
+      path = editor.getPath()
+      if @lifeCycle.isPathFromProject(path)
+        @editorHandle?.dispose()
+        @editorHandle = editor.onDidSave () =>
+          @statusCheck()
+        if !@lifeCycle.canOpenTextEditors()
+          @commandStartEditing()
 
   hideConfigure: ->
     console.log 'AdvancedWebEditor hidden configuration'
