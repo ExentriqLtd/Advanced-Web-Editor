@@ -205,7 +205,8 @@ module.exports =
 
   commitAll: () ->
     message = now()
-    return callGit "commit -a -m \"#{message}\"", parseDefault
+    return  callGit("add --all", parseDefault).then () ->
+      callGit "commit -a -m \"#{message}\"", parseDefault
 
   commit: (message) ->
     message = message or now()
@@ -308,6 +309,9 @@ module.exports =
     return callGit "checkout -- #{files.join(' ')}", (data) ->
       atomRefresh()
       return parseDefault(data)
+
+  resetHard: () ->
+    return callGit "reset --hard HEAD^", parseDefault
 
   remove: (files) ->
     return noop() unless files.length

@@ -313,14 +313,18 @@ class LifeCycle
           error: error
         }
 
-  updateMaster: () -> @checkoutThenUpdate 'master'
-  updateDevelop: () -> @checkoutThenUpdate 'develop'
+  updateMaster: () -> @checkoutThenUpdate 'master', true
+  updateDevelop: () -> @checkoutThenUpdate 'develop', true
 
-  checkoutThenUpdate: (branch) ->
+  checkoutThenUpdate: (branch, doReset) ->
     console.log "Update #{branch}"
     git.setProjectIndex @indexOfProject()
     return git.checkout branch
-      .then () -> git.pull()
+      .then () ->
+        if !doReset
+          git.pull()
+        else
+          git.resetHard().then () -> git.pull()
 
   getYourBranches: () ->
     conf = @configuration.get()
