@@ -86,7 +86,7 @@ module.exports = AdvancedWebEditor =
     # Listen to project folders. In basic mode, only project folder is allowed
     @subscriptions.add atom.project.onDidChangePaths (paths) =>
       console.log "Atom projects path changed", paths
-      @lifeCycle.openProjectFolder()
+      @lifeCycle.openProjectFolder() if  !@lifeCycle.isStatusInit()
 
     # You should not open text editor if status is not started
     @subscriptions.add atom.workspace.observeActiveTextEditor (editor) =>
@@ -164,6 +164,7 @@ module.exports = AdvancedWebEditor =
 
   doClone: () ->
     console.log "doClone"
+    @lifeCycle.statusInit()
     configuration = @lifeCycle.getConfiguration()
 
     folderSizeInterval = -1

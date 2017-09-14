@@ -59,6 +59,11 @@ class LifeCycle
       git.setProjectIndex @indexOfProject()
       @currentBranch = git.getCurrentBranch()
 
+  statusInit: () ->
+    console.log "lifeCycle::statusInit"
+    @status = STATUS.INIT
+    @_stopObservingBranchSwitch()
+
   statusReady: () ->
     console.log "lifeCycle::statusReady"
     @status = STATUS.READY
@@ -89,8 +94,11 @@ class LifeCycle
     @status = STATUS.PUBLISHING
     @_observeBranchSwitch()
 
+  isStatusInit: () ->
+    return @status == STATUS.INIT
+
   canOpenTextEditors: () ->
-    return @status >= STATUS.STARTING
+    return @status >= STATUS.STARTING || @status == STATUS.INIT
 
   canCheckGitStatus: () ->
     return @status >= STATUS.STARTED && @status != STATUS.SAVING && @status != STATUS.PUBLISHING
