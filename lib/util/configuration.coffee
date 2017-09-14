@@ -22,7 +22,7 @@ class Configuration
     fullName: "Full Name must not be empty"
     email: "Your Email must be a valid email address",
     repoOwner: "Repository Owner must not be empty. It is required for pull requests."
-    username: "Username for Branches must not be empty. It is required to identify your branches."
+    username: "Username for Branches must be made of just letters or numbers. It is required to identify your branches."
     repoUsername: "Repository User Name must not be empty. It is required by BitBucket API."
     password: "Password must not be empty. It is required for pull requests."
     cloneDir: "Clone Directory must be set"
@@ -49,12 +49,16 @@ class Configuration
       re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
       return re.test(value)
 
+    isAlphaNum: (value) ->
+      re = /^[\w]*$/
+      return re.test(value)
+
   @validationRules:
     repoUrl: @validators.isValidRepo
     fullName: @validators.isNotBlank
     email: @validators.isEmail
     repoOwner: @validators.isNotBlank
-    username: @validators.isNotBlank
+    username: @validators.isAlphaNum
     repoUsername: @validators.isNotBlank
     password: @validators.isNotBlank
     cloneDir: @validators.isNotBlank

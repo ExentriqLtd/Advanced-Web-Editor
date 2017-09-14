@@ -314,7 +314,7 @@ module.exports = AdvancedWebEditor =
           @answerCreateNewBranch()
       .fail (error) ->
         atom.notifications.addError "Unable to retrieve your branches. Try again later.",
-          description: error
+          description: if error? then error else ''
           dismissable: true
 
   answerUseBranch: (branch) ->
@@ -349,7 +349,7 @@ module.exports = AdvancedWebEditor =
 
   answerCreateNewBranch: () ->
     console.log "Answer: create new branch"
-    @lifeCycle.currentBranch = branch
+
     git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusStarted()
     @modalPanel?.hide()
@@ -360,6 +360,7 @@ module.exports = AdvancedWebEditor =
     @lifeCycle.setupToolbar(@toolBar)
     @lifeCycle.newBranchThenSwitch()
       .then (branch) =>
+        @lifeCycle.currentBranch = branch
         @lifeCycle.statusStarted()
         @lifeCycle.setupToolbar(@toolBar)
         # @startStatusCheck()
