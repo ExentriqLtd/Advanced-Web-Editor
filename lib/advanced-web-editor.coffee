@@ -48,6 +48,7 @@ module.exports = AdvancedWebEditor =
         @doPreStartCheck()
           .then () =>
             @lifeCycle.setupToolbar(@toolBar)
+            atom.packages.triggerActivationHook("advanced-web-editor:ready")
           .fail (e) =>
             @lifeCycle.statusReady()
             @lifeCycle.setupToolbar(@toolBar)
