@@ -19,7 +19,8 @@ module.exports = AdvancedWebEditor =
   modalPanel: null
   subscriptions: null
   statusCheckInterval: -1
-  editorHandle: null
+  editorSaveHandle: null
+  editorModifyHandle: null
 
   consumeToolBar: (getToolBar) ->
     @toolBar = getToolBar('advanced-web-editor')
@@ -87,24 +88,32 @@ module.exports = AdvancedWebEditor =
     # Listen to project folders. In basic mode, only project folder is allowed
     @subscriptions.add atom.project.onDidChangePaths (paths) =>
       console.log "Atom projects path changed", paths
-      @lifeCycle.openProjectFolder() if  !@lifeCycle.isStatusInit()
+      @lifeCycle.openProjectFolder() if !@lifeCycle.isStatusInit()
 
     # You should not open text editor if status is not started
     @subscriptions.add atom.workspace.observeActiveTextEditor (editor) =>
+      @editorSaveHandle?.dispose()
+      @editorSaveHandle = null
+      @editorModifyHandle?.dispose()
+      @editorModifyHandle = null
+
       if !@lifeCycle.isConfigurationValid()
         return
       console.log "Active text editor is now", editor
       if !editor
-        @editorHandle?.dispose()
-        @editorHandle = null
         return
       path = editor.getPath()
       if @lifeCycle.isPathFromProject(path)
-        @editorHandle?.dispose()
-        @editorHandle = editor.onDidSave () =>
+        @editorSaveHandle = editor.onDidSave () =>
           @statusCheck()
+
         if !@lifeCycle.canOpenTextEditors()
           @commandStartEditing()
+        else
+          @editorModifyHandle = editor.onDidStopChanging () =>
+            console.log "Did stop changing"
+            @lifeCycle.statusStarted()
+            @lifeCycle.setupToolbar @toolBar
 
   hideConfigure: ->
     console.log 'AdvancedWebEditor hidden configuration'
@@ -378,6 +387,12 @@ module.exports = AdvancedWebEditor =
     git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusSaving()
     @lifeCycle.setupToolbar(@toolBar)
+
+    # Save project text editors beforehand
+    atom.workspace.getTextEditors().forEach (t) =>
+      path = t.getPath()
+      if @lifeCycle.isPathFromProject(path)
+        t.save()
 
     @lifeCycle.checkUncommittedChanges().then (hasUncommittedChanges) =>
       console.log "Has uncommitted changes?", hasUncommittedChanges
