@@ -58,8 +58,8 @@ class Configuration
     fullName: @validators.isNotBlank
     email: @validators.isEmail
     repoOwner: @validators.isNotBlank
-    username: @validators.isAlphaNum
-    repoUsername: @validators.isNotBlank
+    username: @validators.whatever # it is calculated
+    repoUsername: @validators.isAlphaNum
     password: @validators.isNotBlank
     cloneDir: @validators.isNotBlank
     advancedMode: @validators.whatever
@@ -98,6 +98,14 @@ class Configuration
 
   setValues: (values) ->
     Object.keys(values).forEach (key) => @conf[key] = values[key]
+    if Configuration.validationRules.email(@conf.email)
+      @conf.username = @extractUsername(@conf.email)
+
+  extractUsername: (email) ->
+    account = email.substring(0, email.indexOf('@'))
+    result = account.replace(/[^\w]/, '')
+    # console.log email, " -> ", result
+    return result
 
   isHttp: ()->
     return @conf.repoUrl.startsWith("http")
