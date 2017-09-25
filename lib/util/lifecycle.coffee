@@ -154,7 +154,10 @@ class LifeCycle
     return git.gitConfig(username, email)
 
   haveToClone: () ->
-    dir = new Directory(@whereToClone())
+    return @_isValidCloneTarget(@whereToClone())
+
+  _isValidCloneTarget: (directory) ->
+    dir = new Directory(directory)
     exists = dir.existsSync()
     isEmpty = dir.getEntriesSync().length == 0
     return !exists || (exists && isEmpty)
@@ -164,6 +167,17 @@ class LifeCycle
     conf = @configuration.get()
     cloneDir = conf["cloneDir"]
     repoUrl = conf["repoUrl"]
+    repoName = getRepoName repoUrl
+    return path.join(cloneDir, repoName)
+
+  haveToCloneMaprDotCom: () ->
+    return @_isValidCloneTarget(@whereToCloneMaprDotCom())
+
+  whereToCloneMaprDotCom: () ->
+    previewConf = @configuration.readPreviewConf()
+    conf = @configuration.get()
+    cloneDir = conf["cloneDir"]
+    repoUrl = previewConf["repoUrl"]
     repoName = getRepoName repoUrl
     return path.join(cloneDir, repoName)
 

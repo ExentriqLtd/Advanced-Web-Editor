@@ -4,6 +4,7 @@ path = require 'path'
 
 {File, Directory} = require 'atom'
 FILE_PATH = path.join(app.getPath("userData"), "adv-web-editor.cson")
+PREVIEW_CONF = path.join(app.getPath("userData"), "mapr-preview.cson")
 
 class Configuration
   @labels:
@@ -84,6 +85,20 @@ class Configuration
       @confFile.create()
       @conf = null
       return @conf
+
+  readPreviewConf: () ->
+    result = null
+    console.log "AdvancedWebEditor::readPreviewConf", PREVIEW_CONF
+    previewConf = new File(PREVIEW_CONF)
+    if !previewConf.existsSync()
+      console.log "No MapR Preview configuration found"
+    else
+      try
+        result = CSON.parseCSONFile(PREVIEW_CONF)
+      catch error
+        console.warn "Mapr Preview: Invalid configuration detected"
+    console.log "Mapr Preview Configuration", result
+    return result
 
   get: () ->
     if !@conf
