@@ -276,15 +276,6 @@ module.exports = AdvancedWebEditor =
 
         @lifeCycle.setupToolbar @toolBar
 
-  # startStatusCheck: () ->
-  #   @statusCheckInterval= window.setInterval () =>
-  #     @statusCheck()
-  #   , STATUS_CHECK_INTERVAL if @statusCheckInterval < 0
-  #
-  # stopStatusCheck: () ->
-  #   window.clearInterval @statusCheckInterval
-  #   @statusCheckInterval = -1
-
   doSaveOrPublish: (action) ->
     promise = null
     if action == "save"
@@ -347,7 +338,6 @@ module.exports = AdvancedWebEditor =
           @modalPanel = null
           @branchView?.destroy()
           @branchView = null
-          # @startStatusCheck()
         .fail (error) ->
           @modalPanel?.hide()
           @modalPanel?.destroy()
@@ -373,7 +363,6 @@ module.exports = AdvancedWebEditor =
         @lifeCycle.currentBranch = branch
         @lifeCycle.statusStarted()
         @lifeCycle.setupToolbar(@toolBar)
-        # @startStatusCheck()
         atom.notifications.addInfo("Created branch #{branch}")
       .fail (e) -> atom.notifications.addError "Error occurred",
         description: e.message + "\n" + e.stdout
@@ -419,7 +408,6 @@ module.exports = AdvancedWebEditor =
     @lifeCycle.doPublish().then () =>
       @lifeCycle.closeAllEditors()
       @lifeCycle.statusReady()
-      # @stopStatusCheck()
       @lifeCycle.setupToolbar(@toolBar)
     .fail (e) =>
       atom.notifications.addError "Error occurred",
@@ -473,7 +461,6 @@ module.exports = AdvancedWebEditor =
                     .fail (error) -> deferred.reject error
 
                 @lifeCycle.statusStarted()
-                # @startStatusCheck()
                 keepEditing = true
                 deferred.resolve true
 

@@ -2,14 +2,13 @@ git = require './git'
 path = require 'path'
 moment = require 'moment'
 q = require 'q'
-getFolderSize = require('get-folder-size')
+getFolderSize = require 'get-folder-size'
 
 Configuration = require './configuration'
 BitBucketManager = require './bitbucket-manager'
 
 { Directory, File } = require 'atom'
-{ lstatSync, readdirSync, existsSync } = require('fs')
-{ join } = require('path')
+
 branchRegex = /origin\/feature\/(\d+)\/(\w+)\/(\d+)/
 TODAY_FORMAT = "MMM d YYYY - HH:mm"
 FORBIDDEN_BRANCHES = ["master", "develop"]
@@ -26,22 +25,12 @@ STATUS =
     return Object.keys(STATUS)
       .find (k) -> typeof(k) != "function" && STATUS[k] == status
 
-isDirectory = (source) ->
-  try
-    return lstatSync(source).isDirectory()
-  catch error
-    return false
-
-getDirectories = (source) ->
-  readdirSync(source).map(name -> join(source, name)).filter(isDirectory)
-
 elementInList = (dir, directories) ->
   return directories.find dir
 
 getRepoName = (uri) ->
   tmp = uri.split('/')
   name = tmp[tmp.length-1]
-  # check for the case when user copied from right panel in github with .git ending
   tmp = name.split('.')
   [..., last] = tmp
   if last is 'git'
