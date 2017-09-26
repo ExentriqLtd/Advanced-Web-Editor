@@ -54,20 +54,22 @@ checkLockFileDoesntExist = () ->
   return deferred.promise
 
 atomRefresh = ->
-  repo.refreshStatus() # not public/in docs
+  # Disabled:
+  # repo.refreshStatus() # not public/in docs
   return
 
-getBranches = -> q.fcall ->
+getBranches = ->
   branches = local: [], remote: [], tags: []
-  refs = repo.getReferences()
+  return repo.refreshStatus().then () ->
+    refs = repo.getReferences()
 
-  for h in refs.heads
-    branches.local.push h.replace('refs/heads/', '')
+    for h in refs.heads
+      branches.local.push h.replace('refs/heads/', '')
 
-  for h in refs.remotes
-    branches.remote.push h.replace('refs/remotes/', '')
+    for h in refs.remotes
+      branches.remote.push h.replace('refs/remotes/', '')
 
-  return branches
+      return branches
 
 setProjectIndex = (index) ->
   repo = undefined
@@ -216,8 +218,9 @@ module.exports =
       atomRefresh()
       return parseDefault(data)
 
-  clone: (repo, target) ->
-    return callGit "clone -q #{repo} \"#{target}\"", parseDefault
+  clone: (repo, target, branch) ->
+    return callGit "clone -q #{repo} \"#{target}\"", parseDefault if !branch
+    return callGit "clone -q -b #{branch} --single-branch #{repo} \"#{target}\"", parseDefault if branch
 
   checkout: (branch, remote) ->
     return callGit "checkout #{if remote then '--track ' else ''}#{branch}", (data) ->

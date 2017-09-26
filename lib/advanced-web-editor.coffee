@@ -146,7 +146,7 @@ module.exports = AdvancedWebEditor =
       @lifeCycle.saveConfiguration()
       @lifeCycle.gitConfig confValues["fullName"], confValues["email"]
         .then () ->
-          atom.restartApplication()
+          atom.restartApplication() #TODO: handle aftermath instead of restarting
           # @hideConfigure()
           # if @lifeCycle.haveToClone()
           #   @askForClone()
@@ -172,6 +172,34 @@ module.exports = AdvancedWebEditor =
         OK: => @doClone()
         # No: -> () -> {}
 
+  percentage: (value, max) ->
+    if value < 0
+      return 0
+    if value >= max
+      return max
+    return value / max * 100.0
+
+  callGitClone: (cloneUrl, cloneTarget, branch) ->
+    git.clone cloneUrl, cloneTarget, branch
+      .then (output) =>
+        console.log output
+        # atom.notifications.addSuccess("Repository cloned succesfully")
+        @doPreStartCheck()
+          .then () =>
+            @lifeCycle.setupToolbar(@toolBar)
+          .fail (e) ->
+            console.log e.message, e.stdout
+            atom.notifications.addError "Error occurred during initialization",
+              description: e.message + "\n" + e.stdout
+      .fail (e) =>
+        console.log e
+        atom.confirm
+          message: 'Error occurred'
+          detailedMessage: "An error occurred during git clone:\n#{e.message}\n#{e.stdout}\n\nYou may want to try again or check out your configuration."
+          buttons:
+            Configure: => @configure()
+            Retry: => @doClone()
+
   doClone: () ->
     console.log "doClone"
     @lifeCycle.statusInit()
@@ -183,38 +211,10 @@ module.exports = AdvancedWebEditor =
 
     isBitbucketRepo = @lifeCycle.isBitbucketRepo()
 
-    percentage = (value, max) ->
-      if value < 0
-        return 0
-      if value >= max
-        return max
-      return value / max * 100.0
-
-    callGitClone = () =>
-      git.clone configuration.assembleCloneUrl(), @lifeCycle.whereToClone()
-        .then (output) =>
-          console.log output
-          atom.notifications.addSuccess("Repository cloned succesfully")
-          @doPreStartCheck()
-            .then () =>
-              @lifeCycle.setupToolbar(@toolBar)
-            .fail (e) ->
-              console.log e.message, e.stdout
-              atom.notifications.addError "Error occurred during initialization",
-                description: e.message + "\n" + e.stdout
-        .fail (e) =>
-          console.log e
-          atom.confirm
-            message: 'Error occurred'
-            detailedMessage: "An error occurred during git clone:\n#{e.message}\n#{e.stdout}\n\nYou may want to try again or check out your configuration."
-            buttons:
-              Configure: => @configure()
-              Retry: => @doClone()
-
     return q.fcall () =>
       if isBitbucketRepo
         progress = new ProgressView()
-        progress.initialize()
+        progress.initialize('1 / 3: Downloading project')
 
         modal = atom.workspace.addModalPanel
           item: progress
@@ -223,7 +223,7 @@ module.exports = AdvancedWebEditor =
         @lifeCycle.getBitbucketRepoSize()
           .then (size) =>
             repoSize = size
-            promise = callGitClone()
+            promise = @callGitClone(configuration.assembleCloneUrl(), @lifeCycle.whereToClone())
               .then () ->
                 window.clearInterval folderSizeInterval
                 modal.destroy()
@@ -240,10 +240,10 @@ module.exports = AdvancedWebEditor =
 
             folderSizeInterval = window.setInterval () =>
               @lifeCycle.getFolderSize @lifeCycle.whereToClone()
-                .then (size) ->
+                .then (size) =>
                   currentSize = size
                   console.log "Cloning", currentSize, repoSize
-                  progress.setProgress percentage(currentSize, repoSize)
+                  progress.setProgress @percentage(currentSize, repoSize)
                 .fail () -> #maybe not yet there
             , FOLDER_SIZE_INTERVAL
             return promise
@@ -258,7 +258,7 @@ module.exports = AdvancedWebEditor =
                 Configure: => @configure()
                 Retry: => @doClone()
       else
-        return callGitClone()
+        return @callGitClone(configuration.assembleCloneUrl(), @lifeCycle.whereToClone())
 
   statusCheck: () ->
     # console.log "statusCheck ->"

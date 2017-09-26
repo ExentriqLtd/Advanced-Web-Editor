@@ -41,6 +41,7 @@ class FormView extends HTMLElement
     row.classList.add("native-key-bindings") # workaround Atom bug
     row.appendChild @createLabel(id, label)
     row.appendChild @createField(id, type, null, options)
+    row.appendChild @createProgressLabel(id) if type == "progress"
     return row
 
   createLabel: (id, caption, cssClass) ->
@@ -89,6 +90,19 @@ class FormView extends HTMLElement
     td.appendChild field
     # console.log "Created field", field, field.id
     return td
+
+  createProgressLabel: (id) ->
+    td = document.createElement("td")
+    label = document.createElement("label")
+    label.id = "#{id}_label"
+    label.innerText = @formatProgress(0)
+    @fields.push label
+    td.appendChild label
+    return td
+
+  formatProgress: (value) ->
+    rounded = ((Math.round(value * 10.0)) / 10.0).toFixed(1)
+    return "#{rounded}%"
 
   reset: ->
     @fields.forEach (x) ->
