@@ -169,7 +169,7 @@ module.exports = AdvancedWebEditor =
       message: 'Information: Download about to start'
       detailedMessage: 'Your repository will be downloaded. It may take a long time.'
       buttons:
-        OK: => @doClone()
+        OK: => @doClone(@lifeCycle.getConfiguration(), "Downloading content project...")
         # No: -> () -> {}
 
   percentage: (value, max) ->
@@ -191,39 +191,50 @@ module.exports = AdvancedWebEditor =
             console.log e.message, e.stdout
             atom.notifications.addError "Error occurred during initialization",
               description: e.message + "\n" + e.stdout
-      .fail (e) =>
-        console.log e
-        atom.confirm
-          message: 'Error occurred'
-          detailedMessage: "An error occurred during git clone:\n#{e.message}\n#{e.stdout}\n\nYou may want to try again or check out your configuration."
-          buttons:
-            Configure: => @configure()
-            Retry: => @doClone()
+      # .fail (e) =>
+      #   console.log e
+      #   atom.confirm
+      #     message: 'Error occurred'
+      #     detailedMessage: "An error occurred during git clone:\n#{e.message}\n#{e.stdout}\n\nYou may want to try again or check out your configuration."
+      #     buttons:
+      #       Configure: => @configure()
+      #       Retry: => @doClone()
 
-  doClone: () ->
-    console.log "doClone"
+  doClone: (configuration, message) ->
+    console.log "doClone", configuration
     @lifeCycle.statusInit()
-    configuration = @lifeCycle.getConfiguration()
+    # configuration = @lifeCycle.getConfiguration()
+
+    cloneUrl = configuration.assembleCloneUrl()
+    targetDir = @lifeCycle.whereToClone(cloneUrl)
 
     folderSizeInterval = -1
     repoSize = -1
     currentSize = 0
 
-    isBitbucketRepo = @lifeCycle.isBitbucketRepo()
+    isBitbucketRepo = @lifeCycle.isBitbucketRepo(cloneUrl)
 
     return q.fcall () =>
       if isBitbucketRepo
         progress = new ProgressView()
-        progress.initialize('1 / 3: Downloading project')
+        progress.initialize(message)
 
         modal = atom.workspace.addModalPanel
           item: progress
           visible: true
 
-        @lifeCycle.getBitbucketRepoSize()
+        conf = configuration.get()
+        repoUsername = conf.username
+        repoPassword = conf.password
+        repoOwner = conf.repoOwner
+        repoName = @lifeCycle.getRepoName cloneUrl
+
+        console.log repoUsername, repoPassword, repoOwner, repoName
+
+        @lifeCycle.getBitbucketRepoSize(repoUsername, repoPassword, repoOwner, repoName)
           .then (size) =>
             repoSize = size
-            promise = @callGitClone(configuration.assembleCloneUrl(), @lifeCycle.whereToClone())
+            promise = @callGitClone(cloneUrl, targetDir)
               .then () ->
                 window.clearInterval folderSizeInterval
                 modal.destroy()
@@ -233,13 +244,13 @@ module.exports = AdvancedWebEditor =
                 modal.destroy()
                 atom.confirm
                   message: 'Error occurred'
-                  detailedMessage: "Unable to download the project.\nYou may want to try again or check out your configuration."
+                  detailedMessage: "Unable to download #{cloneUrl}.\nYou may want to try again or check out your configuration."
                   buttons:
                     Configure: => @configure()
-                    Retry: => @doClone()
+                    Retry: => @doClone(configuration, message)
 
             folderSizeInterval = window.setInterval () =>
-              @lifeCycle.getFolderSize @lifeCycle.whereToClone()
+              @lifeCycle.getFolderSize targetDir
                 .then (size) =>
                   currentSize = size
                   console.log "Cloning", currentSize, repoSize
@@ -256,9 +267,9 @@ module.exports = AdvancedWebEditor =
               detailedMessage: "Unable to gather remote repository size.\nYou may want to try again or check out your configuration."
               buttons:
                 Configure: => @configure()
-                Retry: => @doClone()
+                Retry: => @doClone(configuration, message)
       else
-        return @callGitClone(configuration.assembleCloneUrl(), @lifeCycle.whereToClone())
+        return @callGitClone(cloneUrl, targetDir)
 
   statusCheck: () ->
     # console.log "statusCheck ->"

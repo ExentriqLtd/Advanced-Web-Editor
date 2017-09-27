@@ -6,6 +6,16 @@ path = require 'path'
 FILE_PATH = path.join(app.getPath("userData"), "adv-web-editor.cson")
 PREVIEW_CONF = path.join(app.getPath("userData"), "mapr-preview.cson")
 
+getRepoName = (uri) ->
+  tmp = uri.split('/')
+  name = tmp[tmp.length-1]
+  tmp = name.split('.')
+  [..., last] = tmp
+  if last is 'git'
+    name = tmp[...-1].join('.')
+  else
+    name
+
 class Configuration
   @labels:
     repoUrl: "Project Clone URL"

@@ -152,10 +152,10 @@ class LifeCycle
     return !exists || (exists && isEmpty)
 
   # return actual clone path
-  whereToClone: () ->
+  whereToClone: (url) ->
     conf = @configuration.get()
     cloneDir = conf["cloneDir"]
-    repoUrl = conf["repoUrl"]
+    repoUrl = if !url then conf["repoUrl"] else url
     repoName = getRepoName repoUrl
     return path.join(cloneDir, repoName)
 
@@ -434,16 +434,19 @@ class LifeCycle
 
     return deferred.promise
 
-  isBitbucketRepo: () ->
-    repoUrl = @configuration.get().repoUrl
-    return repoUrl.indexOf '@bitbucket.org' > 0 || repoUrl.indexOf 'bitbucket.org' > 0
+  isBitbucketRepo: (repoUrl) ->
+    theUrl = if !repoUrl then @configuration.get().repoUrl else repoUrl
+    return theUrl.indexOf '@bitbucket.org' > 0 || theUrl.indexOf 'bitbucket.org' > 0
 
-  getBitbucketRepoSize: () ->
+  getBitbucketRepoSize: (repoUsername, repoPassword, repoOwner, repoName) ->
+    console.log "getBitbucketRepoSize", repoUsername, repoPassword, repoOwner, repoName
     conf = @configuration.get()
-    repoOwner = conf.repoOwner
-    repoName = getRepoName conf.repoUrl
-    bm = new BitBucketManager(conf.repoUsername, conf.password)
-    return bm.getRepoSize(repoOwner, repoName)
+    owner = if !repoOwner then conf.repoOwner else repoOwner
+    name = if !repoName then getRepoName(conf.repoUrl) else repoName
+    username = if repoUsername then repoUsername else conf.repoUsername
+    password = if repoPassword then repoPassword else conf.password
+    bm = new BitBucketManager(username, password)
+    return bm.getRepoSize(owner, name)
 
   checkUncommittedChanges: () ->
     console.log "checkUncommittedChanges"
@@ -461,6 +464,8 @@ class LifeCycle
   isPathFromProject: (p) ->
     root = @whereToClone()
     return if (p and root) then p.indexOf(root) >= 0 else false
+
+  getRepoName: getRepoName
 
   _observeBranchSwitch: () ->
     console.log "_observeBranchSwitch"
