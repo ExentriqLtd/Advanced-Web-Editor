@@ -132,9 +132,6 @@ class Configuration
     # console.log email, " -> ", result
     return result
 
-  isHttp: ()->
-    return @conf.repoUrl.startsWith("http")
-
   save: () ->
     console.log "AdvancedWebEditor::save", FILE_PATH
     s = CSON.stringify(@conf)
@@ -154,20 +151,6 @@ class Configuration
       res = Configuration.validationRules[rule](@conf[rule])
       return if res then null else rule
     .filter (x) -> x
-
-  isStringEmpty: (s) ->
-    return !(s && s.trim && s.trim().length > 0)
-
-  assembleCloneUrl: () ->
-    if(!@isHttp)
-      return @conf.repoUrl
-
-    if @isStringEmpty(@conf.username)
-      return @conf.repoUrl
-    i = @conf.repoUrl.indexOf("//")
-    if i < 0
-      return @conf.repoUrl
-    return @conf.repoUrl.substring(0, i + 2) + @conf.username + ":" + @conf.password + "@" + @conf.repoUrl.substring(i+2)
 
 keys = Object.keys(Configuration.labels)
 module.exports = Configuration

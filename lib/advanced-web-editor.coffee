@@ -9,7 +9,6 @@ LifeCycle = require './util/lifecycle'
 Configuration = require './util/configuration'
 git = require './util/git'
 
-STATUS_CHECK_INTERVAL = 25000
 FOLDER_SIZE_INTERVAL = 1500
 
 module.exports = AdvancedWebEditor =
@@ -43,20 +42,30 @@ module.exports = AdvancedWebEditor =
       @configure()
     else
       @lifeCycle.closeAllEditors()
-      if @lifeCycle.haveToClone()
-        @askForClone()
+      operations = @getInitialSetupOperations()
+      console.log "Initial setup operations", operations
+      # if @lifeCycle.haveToClone()
+      #   @askForClone()
+      if operations.length > 0
+        operations.push(() => @handlePreStartCheck())
+        operations.push(() -> q.fcall atom.packages.triggerActivationHook("advanced-web-editor:ready"))
+        # Perform initialization steps in sequence
+        result = operations.reduce(q.when, q(true))
       else
-        @doPreStartCheck()
-          .then () =>
-            @lifeCycle.setupToolbar(@toolBar)
-            atom.packages.triggerActivationHook("advanced-web-editor:ready")
-          .fail (e) =>
-            @lifeCycle.statusReady()
-            @lifeCycle.setupToolbar(@toolBar)
-            console.log e.message, e.stdout
-            atom.notifications.addError "Error occurred during initialization",
-              description: e.message + "\n" + e.stdout
+        @handlePreStartCheck()
 
+  handlePreStartCheck: () ->
+    console.log "handlePreStartCheck", this
+    return @doPreStartCheck()
+      .then () =>
+        @lifeCycle.setupToolbar(@toolBar)
+        atom.packages.triggerActivationHook("advanced-web-editor:ready")
+      .fail (e) =>
+        @lifeCycle.statusReady()
+        @lifeCycle.setupToolbar(@toolBar)
+        console.log "During pre start check", e
+        atom.notifications.addError "Error occurred during initialization",
+          description: e.message + "\n" + e.stdout
 
   deactivate: ->
     @subscriptions.dispose()
@@ -164,13 +173,13 @@ module.exports = AdvancedWebEditor =
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
 
-  askForClone: () ->
-    atom.confirm
-      message: 'Information: Download about to start'
-      detailedMessage: 'Your repository will be downloaded. It may take a long time.'
-      buttons:
-        OK: => @doClone(@lifeCycle.getConfiguration(), "Downloading content project...")
-        # No: -> () -> {}
+  # askForClone: () ->
+  #   atom.confirm
+  #     message: 'Information: Download about to start'
+  #     detailedMessage: 'Your repository will be downloaded. It may take a long time.'
+  #     buttons:
+  #       OK: => @doClone(@lifeCycle.getConfiguration().get(), "Downloading content project...")
+  #       # No: -> () -> {}
 
   percentage: (value, max) ->
     if value < 0
@@ -203,9 +212,8 @@ module.exports = AdvancedWebEditor =
   doClone: (configuration, message) ->
     console.log "doClone", configuration
     @lifeCycle.statusInit()
-    # configuration = @lifeCycle.getConfiguration()
 
-    cloneUrl = configuration.assembleCloneUrl()
+    cloneUrl = @lifeCycle.assembleCloneUrl(configuration)
     targetDir = @lifeCycle.whereToClone(cloneUrl)
 
     folderSizeInterval = -1
@@ -223,10 +231,9 @@ module.exports = AdvancedWebEditor =
           item: progress
           visible: true
 
-        conf = configuration.get()
-        repoUsername = conf.username
-        repoPassword = conf.password
-        repoOwner = conf.repoOwner
+        repoUsername = configuration.username
+        repoPassword = configuration.password
+        repoOwner = configuration.repoOwner
         repoName = @lifeCycle.getRepoName cloneUrl
 
         console.log repoUsername, repoPassword, repoOwner, repoName
@@ -238,7 +245,7 @@ module.exports = AdvancedWebEditor =
               .then () ->
                 window.clearInterval folderSizeInterval
                 modal.destroy()
-                atom.restartApplication()
+                # atom.restartApplication()
               .fail () =>
                 window.clearInterval folderSizeInterval
                 modal.destroy()
@@ -427,6 +434,7 @@ module.exports = AdvancedWebEditor =
       @lifeCycle.setupToolbar(@toolBar)
 
   doPreStartCheck: () ->
+    console.log "doPrestartCheck", this
     keepEditing = false
     deferred = q.defer()
     @lifeCycle.openProjectFolder()
@@ -492,3 +500,17 @@ module.exports = AdvancedWebEditor =
         deferred.reject e
 
       return deferred.promise
+
+  getInitialSetupOperations: () ->
+    operations = []
+
+    if @lifeCycle.haveToClone()
+      operations.push () => @doClone(@lifeCycle.getConfiguration().get(), "Downloading content project...")
+
+    if @lifeCycle.haveToClonePreviewEngine()
+      operations.push () => @doClone(@lifeCycle.getConfiguration().readPreviewConf(), "Downloading preview engine...")
+      operations.push () => @lifeCycle.initializePreviewEngine()
+    else if @lifeCycle.haveToInitializePreviewEngine()
+      operations.push () => @lifeCycle.initializePreviewEngine()
+
+    return operations

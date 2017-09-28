@@ -7,7 +7,9 @@ getFolderSize = require 'get-folder-size'
 Configuration = require './configuration'
 BitBucketManager = require './bitbucket-manager'
 
-{ Directory, File } = require 'atom'
+PleaseWaitView = require './please-wait-view'
+
+{ Directory, File, BufferedProcess } = require 'atom'
 
 branchRegex = /origin\/feature\/(\d+)\/(\w+)\/(\d+)/
 TODAY_FORMAT = "MMM d YYYY - HH:mm"
@@ -159,10 +161,10 @@ class LifeCycle
     repoName = getRepoName repoUrl
     return path.join(cloneDir, repoName)
 
-  haveToCloneMaprDotCom: () ->
-    return @_isValidCloneTarget(@whereToCloneMaprDotCom())
+  haveToClonePreviewEngine: () ->
+    return @_isValidCloneTarget(@whereToClonePreviewEngine())
 
-  whereToCloneMaprDotCom: () ->
+  whereToClonePreviewEngine: () ->
     previewConf = @configuration.readPreviewConf()
     conf = @configuration.get()
     cloneDir = conf["cloneDir"]
@@ -496,5 +498,73 @@ class LifeCycle
       p = t.getPath()
       if @isPathFromProject p
         t.destroy()
+
+  isStringEmpty: (s) ->
+    return !(s && s.trim && s.trim().length > 0)
+
+  isHttp: (url)->
+    return url.startsWith("http")
+
+  assembleCloneUrl: (conf) ->
+    if(!@isHttp(conf.repoUrl))
+      return conf.repoUrl
+
+    if @isStringEmpty(conf.username)
+      return conf.repoUrl
+    i = conf.repoUrl.indexOf("//")
+    if i < 0
+      return conf.repoUrl
+    return conf.repoUrl.substring(0, i + 2) + conf.username + ":" + conf.password + "@" + conf.repoUrl.substring(i+2)
+
+  haveToInitializePreviewEngine: () ->
+    previewConf = @configuration.readPreviewConf()
+    node_modules_dir = path.join(@whereToClonePreviewEngine(), 'node_modules')
+    # same requirements: either doesn't exist or is empty
+    return @_isValidCloneTarget(node_modules_dir)
+
+  initializePreviewEngine: () ->
+    view = new PleaseWaitView()
+    view.initialize("Initializing preview engine. Please wait...")
+    modal = atom.workspace.addModalPanel(item: view, visible:true)
+    @_doInitializePreviewEngine()
+    .then () ->
+      modal.destroy()
+    .fail (e) ->
+      modal.destroy()
+      atom.notifications.addError("Error occurred", description: "Error occurred during initialization", detail: e.message, dismissable: true)
+
+  _doInitializePreviewEngine: () ->
+    cwd = @whereToClonePreviewEngine()
+
+    deferred = q.defer()
+
+    errors = []
+    command = "npm"
+    args = ["install"]
+
+    stdout = (output) -> console.log "npm >", output
+
+    stderr = (output) ->
+      stream = console.error
+      if output.indexOf('WARN') > 0
+        stream = console.log
+      else
+        errors.push output
+
+      stream "npm >", output
+
+    exit = (code) ->
+      console.log("npm exited with #{code}")
+
+      if code && code > 0
+        deferred.reject message:errors.join "\n"
+      if code == 0
+        deferred.resolve true
+
+    options =
+      cwd: cwd
+    npmProcess = new BufferedProcess({command, args, options, stdout, stderr, exit})
+
+    return deferred.promise
 
 module.exports = LifeCycle
