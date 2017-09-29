@@ -41,18 +41,19 @@ module.exports = AdvancedWebEditor =
       console.log "Configuration required"
       @configure()
     else
-      @lifeCycle.closeAllEditors()
-      operations = @getInitialSetupOperations()
-      console.log "Initial setup operations", operations
-      # if @lifeCycle.haveToClone()
-      #   @askForClone()
-      if operations.length > 0
-        operations.push(() => @handlePreStartCheck())
-        operations.push(() -> q.fcall atom.packages.triggerActivationHook("advanced-web-editor:ready"))
-        # Perform initialization steps in sequence
-        result = operations.reduce(q.when, q(true))
-      else
-        @handlePreStartCheck()
+      @init()
+
+  init: () ->
+    @lifeCycle.closeAllEditors()
+    operations = @getInitialSetupOperations()
+    console.log "Initial setup operations", operations
+    if operations.length > 0
+      operations.push(() => @handlePreStartCheck())
+      operations.push(() -> q.fcall atom.packages.triggerActivationHook("advanced-web-editor:ready"))
+      # Perform initialization steps in sequence
+      result = operations.reduce(q.when, q(true))
+    else
+      @handlePreStartCheck()
 
   handlePreStartCheck: () ->
     console.log "handlePreStartCheck", this
@@ -66,6 +67,8 @@ module.exports = AdvancedWebEditor =
         console.log "During pre start check", e
         atom.notifications.addError "Error occurred during initialization",
           description: e.message + "\n" + e.stdout
+      .done()
+
 
   deactivate: ->
     @subscriptions.dispose()
@@ -79,7 +82,6 @@ module.exports = AdvancedWebEditor =
     @toolBar = null
 
   serialize: ->
-    # advancedWebEditorViewState: @configurationView.serialize()
 
   subscribeToAtomEvents: ->
     # Events subscribed to in atom's system can be easily
@@ -153,33 +155,13 @@ module.exports = AdvancedWebEditor =
       Configuration.reasons[k]
     if validationMessages.length == 0
       @lifeCycle.saveConfiguration()
+      @hideConfigure()
       @lifeCycle.gitConfig confValues["fullName"], confValues["email"]
-        .then () ->
-          atom.restartApplication() #TODO: handle aftermath instead of restarting
-          # @hideConfigure()
-          # if @lifeCycle.haveToClone()
-          #   @askForClone()
-          # else
-          #   @doPreStartCheck()
-          #     .then () =>
-          #       @lifeCycle.setupToolbar(@toolBar)
-          #     .fail (e) =>
-          #       @lifeCycle.statusReady()
-          #       @lifeCycle.setupToolbar(@toolBar)
-          #       console.log e.message, e.stdout
-          #       atom.notifications.addError "Error occurred during initialization",
-          #         description: e.message + "\n" + e.stdout
+        .then () => @init()
+        .done()
     else
       validationMessages.forEach (msg) ->
         atom.notifications.addError(msg)
-
-  # askForClone: () ->
-  #   atom.confirm
-  #     message: 'Information: Download about to start'
-  #     detailedMessage: 'Your repository will be downloaded. It may take a long time.'
-  #     buttons:
-  #       OK: => @doClone(@lifeCycle.getConfiguration().get(), "Downloading content project...")
-  #       # No: -> () -> {}
 
   percentage: (value, max) ->
     if value < 0
@@ -188,29 +170,8 @@ module.exports = AdvancedWebEditor =
       return max
     return value / max * 100.0
 
-  callGitClone: (cloneUrl, cloneTarget, branch) ->
-    git.clone cloneUrl, cloneTarget, branch
-      .then (output) =>
-        console.log output
-        # atom.notifications.addSuccess("Repository cloned succesfully")
-        @doPreStartCheck()
-          .then () =>
-            @lifeCycle.setupToolbar(@toolBar)
-          .fail (e) ->
-            console.log e.message, e.stdout
-            atom.notifications.addError "Error occurred during initialization",
-              description: e.message + "\n" + e.stdout
-      # .fail (e) =>
-      #   console.log e
-      #   atom.confirm
-      #     message: 'Error occurred'
-      #     detailedMessage: "An error occurred during git clone:\n#{e.message}\n#{e.stdout}\n\nYou may want to try again or check out your configuration."
-      #     buttons:
-      #       Configure: => @configure()
-      #       Retry: => @doClone()
-
   doClone: (configuration, message) ->
-    console.log "doClone", configuration
+    # console.log "doClone", configuration
     @lifeCycle.statusInit()
 
     cloneUrl = @lifeCycle.assembleCloneUrl(configuration)
@@ -236,12 +197,12 @@ module.exports = AdvancedWebEditor =
         repoOwner = configuration.repoOwner
         repoName = @lifeCycle.getRepoName cloneUrl
 
-        console.log repoUsername, repoPassword, repoOwner, repoName
+        # console.log repoUsername, repoPassword, repoOwner, repoName
 
         @lifeCycle.getBitbucketRepoSize(repoUsername, repoPassword, repoOwner, repoName)
           .then (size) =>
             repoSize = size
-            promise = @callGitClone(cloneUrl, targetDir)
+            promise = git.clone cloneUrl, targetDir
               .then () ->
                 window.clearInterval folderSizeInterval
                 modal.destroy()
@@ -276,7 +237,7 @@ module.exports = AdvancedWebEditor =
                 Configure: => @configure()
                 Retry: => @doClone(configuration, message)
       else
-        return @callGitClone(cloneUrl, targetDir)
+        return git.clone cloneUrl, targetDir
 
   statusCheck: () ->
     # console.log "statusCheck ->"
@@ -438,26 +399,35 @@ module.exports = AdvancedWebEditor =
     keepEditing = false
     deferred = q.defer()
     @lifeCycle.openProjectFolder()
-    @lifeCycle.checkUncommittedChanges()
-      .then (state) =>
-        if state
-          return {
-            state: "unsaved"
-          }
-        else
-          @lifeCycle.checkUnpublishedChanges()
-            .then (unpublishedBranches) ->
-              # console.log unpublishedBranches
-              if unpublishedBranches.length > 0
-                return {
-                  state: "unpublished"
-                  branches: unpublishedBranches
-                }
-              else
-                return{
-                  state: "ok"
-                }
-      .then (state) =>
+
+    promise = null
+    if @lifeCycle.canCheckGitStatus()
+      promise = q.fcall () ->
+        return {
+          state: 'ok'
+        }
+    else
+      promise = @lifeCycle.checkUncommittedChanges()
+        .then (state) =>
+          if state
+            return {
+              state: "unsaved"
+            }
+          else
+            @lifeCycle.checkUnpublishedChanges()
+              .then (unpublishedBranches) ->
+                # console.log unpublishedBranches
+                if unpublishedBranches.length > 0
+                  return {
+                    state: "unpublished"
+                    branches: unpublishedBranches
+                  }
+                else
+                  return{
+                    state: "ok"
+                  }
+
+      promise.then (state) =>
         console.log state
         if state.state != "ok"
           action = 'save' if state.state == 'unsaved'
