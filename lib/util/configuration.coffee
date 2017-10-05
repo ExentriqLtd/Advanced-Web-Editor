@@ -107,6 +107,12 @@ class Configuration
         result = CSON.parseCSONFile(PREVIEW_CONF)
       catch error
         console.warn "Mapr Preview: Invalid configuration detected"
+
+    if result
+      # For uniformity
+      result.repoUsername = result.username
+      delete result.username
+      
     console.log "Mapr Preview Configuration", result
     return result
 
@@ -128,7 +134,7 @@ class Configuration
 
   extractUsername: (email) ->
     account = email.substring(0, email.indexOf('@'))
-    result = account.replace(/[^\w]/, '')
+    result = account.replace(/[^\w]/g, '').toLowerCase()
     # console.log email, " -> ", result
     return result
 

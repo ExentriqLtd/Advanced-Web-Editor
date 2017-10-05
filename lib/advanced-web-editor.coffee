@@ -193,7 +193,7 @@ module.exports = AdvancedWebEditor =
           item: progress
           visible: true
 
-        repoUsername = configuration.username
+        repoUsername = configuration.repoUsername
         repoPassword = configuration.password
         repoOwner = configuration.repoOwner
         repoName = @lifeCycle.getRepoName cloneUrl
