@@ -26,7 +26,7 @@ transformBranchResponse = (body) ->
 class BitBucketManager
 
   constructor: (@bitBucketUsername, @bitBucketPassword) ->
-    console.log "BitBucketManager::constructor", @bitBucketUsername, @bitBucketPassword
+    # console.log "BitBucketManager::constructor", @bitBucketUsername, @bitBucketPassword
 
   buildAuth: () ->
     return {
@@ -136,7 +136,7 @@ class BitBucketManager
     return deferred.promise
 
   getRepoSize: (repoOwner, repoName) ->
-    console.log "BitBucketManager::getRepoSize", repoOwner, repoName
+    # console.log "BitBucketManager::getRepoSize", repoOwner, repoName
     deferred = q.defer()
     url = "#{API_URL}#{repoOwner}/#{repoName}"
     options =
