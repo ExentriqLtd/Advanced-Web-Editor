@@ -70,7 +70,7 @@ class Configuration
     email: @validators.isEmail
     repoOwner: @validators.isNotBlank
     username: @validators.whatever # it is calculated
-    repoUsername: @validators.isAlphaNum
+    repoUsername: @validators.isNotBlank
     password: @validators.isNotBlank
     cloneDir: @validators.isNotBlank
     advancedMode: @validators.whatever
@@ -112,7 +112,7 @@ class Configuration
       # For uniformity
       result.repoUsername = result.username
       delete result.username
-      
+
     console.log "Mapr Preview Configuration", result
     return result
 
