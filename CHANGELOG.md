@@ -4,3 +4,6 @@
 email
 * Increased toolbar buttons contrast
 * Perform all the initial setup on startup, so no Atom restart required anymore
+
+## Version 0.1.4:
+* Fixed bugs
