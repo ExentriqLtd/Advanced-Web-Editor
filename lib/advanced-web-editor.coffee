@@ -401,6 +401,8 @@ module.exports = AdvancedWebEditor =
     deferred = q.defer()
     @lifeCycle.openProjectFolder()
 
+    @lifeCycle.deleteGitLock()
+
     promise = null
     if @lifeCycle.canCheckGitStatus()
       promise = q.fcall () ->

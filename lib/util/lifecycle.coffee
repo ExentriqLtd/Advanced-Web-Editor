@@ -1,5 +1,6 @@
 git = require './git'
 path = require 'path'
+fs = require 'fs'
 moment = require 'moment'
 q = require 'q'
 getFolderSize = require 'get-folder-size'
@@ -93,6 +94,15 @@ class LifeCycle
 
   canCheckGitStatus: () ->
     return @status >= STATUS.STARTED && @status != STATUS.SAVING && @status != STATUS.PUBLISHING
+
+  deleteGitLock: () ->
+    if !@isConfigurationValid || @haveToClone()
+      return
+
+    theLock = path.join(@whereToClone(), '.git', 'index.lock')
+    if fs.existsSync(theLock)
+      fs.unlinkSync(theLock)
+
 
   setupToolbar: (toolBar) ->
     console.log "lifeCycle::setupToolbar"
