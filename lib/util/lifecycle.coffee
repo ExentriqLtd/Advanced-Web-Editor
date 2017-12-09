@@ -339,6 +339,7 @@ class LifeCycle
         if !doReset
           git.pull()
         else
+          @deleteGitLock()
           git.resetHard().then () -> git.pull()
 
   getYourBranches: () ->

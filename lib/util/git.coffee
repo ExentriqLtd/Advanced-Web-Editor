@@ -136,7 +136,8 @@ parseStatus = (data) -> q.fcall ->
 parseDefault = (data) -> q.fcall ->
   return true
 
-returnAsIs = (data) -> data
+returnAsIs = (data) -> q.fcall ->
+  return data
 
 callGit = (cmd, parser, nodatalog) ->
   logcb "> git #{cmd}"
