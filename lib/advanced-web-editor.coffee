@@ -48,10 +48,13 @@ module.exports = AdvancedWebEditor =
     operations = @getInitialSetupOperations()
     console.log "Initial setup operations", operations
     if operations.length > 0
-      operations.push(() => @handlePreStartCheck())
-      operations.push () ->
-        q.fcall () -> atom.packages.triggerActivationHook("advanced-web-editor:ready")
+      # operations.push(() => @handlePreStartCheck())
+      # operations.push () ->
+      #   q.fcall () -> atom.packages.triggerActivationHook("advanced-web-editor:ready")
       # Perform initialization steps in sequence
+      operations.push(() ->
+        q.fcall () -> atom.restartApplication()
+      )
       result = operations.reduce(q.when, q(true))
     else
       @handlePreStartCheck()

@@ -335,11 +335,11 @@ class LifeCycle
     console.log "Update #{branch}"
     git.setProjectIndex @indexOfProject()
     return git.checkout branch
-      .then () =>
+      .then () ->
         if !doReset
           git.pull()
         else
-          @deleteGitLock()
+          # @deleteGitLock()
           git.resetHard().then () -> git.pull()
 
   getYourBranches: () ->
