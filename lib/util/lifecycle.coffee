@@ -48,7 +48,7 @@ class LifeCycle
     @configuration = new Configuration()
     @status = STATUS.INIT
     if @configuration.exists() && @configuration.isValid()
-      git.setProjectIndex @indexOfProject()
+      # git.setProjectIndex @indexOfProject()
       @currentBranch = git.getCurrentBranch()
 
   statusInit: () ->
@@ -216,13 +216,13 @@ class LifeCycle
     return -1
 
   doCommit: () ->
-    git.setProjectIndex @indexOfProject()
+    # git.setProjectIndex @indexOfProject()
     return git.commitAll().then () =>
       @status = STATUS.SAVED
       atom.notifications.addSuccess("Changes have been saved succesfully. Publish them when you are ready.")
 
   doTraditionalCommit: () ->
-    git.setProjectIndex @indexOfProject()
+    # git.setProjectIndex @indexOfProject()
 
     return git.status().then (files) ->
       return files
@@ -245,7 +245,7 @@ class LifeCycle
 
   #publish current branch only
   doPublish: () ->
-    git.setProjectIndex @indexOfProject()
+    # git.setProjectIndex @indexOfProject()
     conf = @configuration.get()
     repoName = getRepoName(conf.repoUrl)
     prm = new BitBucketManager(conf.repoUsername, conf.password)
@@ -276,7 +276,7 @@ class LifeCycle
         atom.notifications.addSuccess("Changes have been published succesfully.")
 
   doPublishAllBranches: () ->
-    git.setProjectIndex @indexOfProject()
+    # git.setProjectIndex @indexOfProject()
     conf = @configuration.get()
     branches = []
     repoName = getRepoName(conf.repoUrl)
@@ -333,14 +333,17 @@ class LifeCycle
 
   checkoutThenUpdate: (branch, doReset) ->
     console.log "Update #{branch}"
-    git.setProjectIndex @indexOfProject()
+    # git.setProjectIndex @indexOfProject()
     return git.checkout branch
       .then () ->
         if !doReset
           git.pull()
         else
-          # @deleteGitLock()
-          git.resetHard().then () -> git.pull()
+          git.status().then (s) ->
+            if s.length == 0
+              return git.pull()
+            else
+              return git.resetHard().then () -> git.pull()
 
   getYourBranches: () ->
     conf = @configuration.get()
@@ -463,14 +466,14 @@ class LifeCycle
 
   checkUncommittedChanges: () ->
     console.log "checkUncommittedChanges"
-    git.setProjectIndex @indexOfProject()
+    # git.setProjectIndex @indexOfProject()
     if git.isCurrentBranchForbidden()
       return q.fcall () -> false
     return git.status().then (output) -> output && output.length > 0
 
   checkUnpublishedChanges: () ->
     console.log "checkUnpublishedChanges"
-    git.setProjectIndex @indexOfProject()
+    # git.setProjectIndex @indexOfProject()
     return git.unpushedCommits()
       .then (branches) -> branches.filter (b) -> b not in FORBIDDEN_BRANCHES
 

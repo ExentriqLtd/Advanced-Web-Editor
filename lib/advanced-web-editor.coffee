@@ -41,6 +41,7 @@ module.exports = AdvancedWebEditor =
       console.log "Configuration required"
       @configure()
     else
+      git.setProjectIndex @lifeCycle.indexOfProject()
       @init()
 
   init: () ->
@@ -52,9 +53,9 @@ module.exports = AdvancedWebEditor =
       # operations.push () ->
       #   q.fcall () -> atom.packages.triggerActivationHook("advanced-web-editor:ready")
       # Perform initialization steps in sequence
-      operations.push(() ->
+      operations.push () ->
         q.fcall () -> atom.restartApplication()
-      )
+
       result = operations.reduce(q.when, q(true))
     else
       @handlePreStartCheck()
@@ -104,6 +105,8 @@ module.exports = AdvancedWebEditor =
     @subscriptions.add atom.project.onDidChangePaths (paths) =>
       console.log "Atom projects path changed", paths
       @lifeCycle.openProjectFolder() if !@lifeCycle.isStatusInit()
+      if !@lifeCycle.haveToClone()
+        git.setProjectIndex @lifeCycle.indexOfProject()
 
     # You should not open text editor if status is not started
     @subscriptions.add atom.workspace.observeActiveTextEditor (editor) =>
@@ -306,7 +309,7 @@ module.exports = AdvancedWebEditor =
       @lifeCycle.currentBranch = branch
       branch = "origin/" + branch if isRemote
 
-      git.setProjectIndex @lifeCycle.indexOfProject()
+      # git.setProjectIndex @lifeCycle.indexOfProject()
       git.checkout(branch, isRemote)
         .then ->
           if !isRemote
@@ -333,7 +336,7 @@ module.exports = AdvancedWebEditor =
   answerCreateNewBranch: () ->
     console.log "Answer: create new branch"
 
-    git.setProjectIndex @lifeCycle.indexOfProject()
+    # git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusStarted()
     @modalPanel?.hide()
     @modalPanel?.destroy()
@@ -356,7 +359,7 @@ module.exports = AdvancedWebEditor =
 
   commandSaveLocally: () ->
     console.log "Command: Save Locally"
-    git.setProjectIndex @lifeCycle.indexOfProject()
+    # git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusSaving()
     @lifeCycle.setupToolbar(@toolBar)
 
@@ -385,7 +388,7 @@ module.exports = AdvancedWebEditor =
 
   commandPublish: () ->
     console.log "Command: Publish"
-    git.setProjectIndex @lifeCycle.indexOfProject()
+    # git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusPublishing()
     @lifeCycle.setupToolbar(@toolBar)
     @lifeCycle.doPublish().then () =>
