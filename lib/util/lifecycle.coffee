@@ -13,7 +13,7 @@ PleaseWaitView = require './please-wait-view'
 { Directory, File, BufferedProcess } = require 'atom'
 
 branchRegex = /origin\/feature\/(\d+)\/(\w+)\/(\d+)/
-TODAY_FORMAT = "MMM d YYYY - HH:mm"
+TODAY_FORMAT = "MMM D YYYY - HH:mm"
 FORBIDDEN_BRANCHES = ["master", "develop"]
 STATUS =
   'INIT': 0
