@@ -369,18 +369,25 @@ module.exports = AdvancedWebEditor =
       if @lifeCycle.isPathFromProject(path)
         t.save()
 
-    @lifeCycle.checkUncommittedChanges().then (hasUncommittedChanges) =>
+    @lifeCycle.checkUncommittedChanges(true).then (hasUncommittedChanges) =>
       console.log "Has uncommitted changes?", hasUncommittedChanges
       if hasUncommittedChanges
         @lifeCycle.doCommit()
           .then () =>
             @lifeCycle.statusSaved()
             @lifeCycle.setupToolbar(@toolBar)
-          .fail (e) => atom.notifications.addError "Error occurred",
-            description: e.message + "\n" + e.stdout
-
-            @lifeCycle.statusStarted()
-            @lifeCycle.setupToolbar(@toolBar)
+          .fail (e) =>
+            # Retry once
+            console.log("First commit failed. Retry once. Reason was", e)
+            @lifeCycle.doCommit()
+              .then () =>
+                @lifeCycle.statusSaved()
+                @lifeCycle.setupToolbar(@toolBar)
+              .fail (e) ->
+                atom.notifications.addError "Error occurred",
+                description: e.message + "\n" + e.stdout
+                @lifeCycle.statusStarted()
+                @lifeCycle.setupToolbar(@toolBar)
       else
         atom.notifications.addSuccess("Nothing to save at the moment.")
         @lifeCycle.statusStarted()
@@ -416,14 +423,14 @@ module.exports = AdvancedWebEditor =
           state: 'ok'
         }
     else
-      promise = @lifeCycle.checkUncommittedChanges()
+      promise = @lifeCycle.checkUncommittedChanges(true)
         .then (state) =>
           if state
             return {
               state: "unsaved"
             }
           else
-            @lifeCycle.checkUnpublishedChanges()
+            @lifeCycle.checkUnpublishedChanges(true)
               .then (unpublishedBranches) ->
                 # console.log unpublishedBranches
                 if unpublishedBranches.length > 0

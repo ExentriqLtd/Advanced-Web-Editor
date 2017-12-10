@@ -464,18 +464,26 @@ class LifeCycle
     bm = new BitBucketManager(username, password)
     return bm.getRepoSize(owner, name)
 
-  checkUncommittedChanges: () ->
+  checkUncommittedChanges: (force) ->
     console.log "checkUncommittedChanges"
-    # git.setProjectIndex @indexOfProject()
-    if git.isCurrentBranchForbidden()
+    if force || @canCheckGitStatus()
+      # git.setProjectIndex @indexOfProject()
+      if git.isCurrentBranchForbidden()
+        return q.fcall () -> false
+      return git.status().then (output) -> output && output.length > 0
+    else
+      console.log "Cannot check at the moment. Operations in progress."
       return q.fcall () -> false
-    return git.status().then (output) -> output && output.length > 0
 
-  checkUnpublishedChanges: () ->
+  checkUnpublishedChanges: (force) ->
     console.log "checkUnpublishedChanges"
-    # git.setProjectIndex @indexOfProject()
-    return git.unpushedCommits()
-      .then (branches) -> branches.filter (b) -> b not in FORBIDDEN_BRANCHES
+    if force || @canCheckGitStatus()
+      # git.setProjectIndex @indexOfProject()
+      return git.unpushedCommits()
+        .then (branches) -> branches.filter (b) -> b not in FORBIDDEN_BRANCHES
+    else
+      console.log "Cannot check at the moment. Operations in progress."
+      return q.fcall () -> false
 
   isPathFromProject: (p) ->
     root = @whereToClone()
