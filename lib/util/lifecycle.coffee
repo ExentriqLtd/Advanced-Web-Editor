@@ -112,6 +112,7 @@ class LifeCycle
         icon: 'gear',
         callback: 'advanced-web-editor:configure',
         tooltip: 'Configure'
+        label: 'Config'
         priority: 86
 
       toolBar.addSpacer
@@ -121,12 +122,14 @@ class LifeCycle
         icon: 'zap',
         callback: 'advanced-web-editor:start',
         tooltip: 'Start Editing'
+        label: 'Edit'
         priority: 88
 
       @saveBtn = toolBar.addButton
         icon: 'database',
         callback: 'advanced-web-editor:save',
         tooltip: 'Save Locally'
+        label: 'Save'
         priority: 89
 
       @publishBtn = toolBar.addButton
