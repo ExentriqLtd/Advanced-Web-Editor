@@ -1,3 +1,5 @@
+{TextEditor} = require 'atom'
+
 class FormView extends HTMLElement
 
   initialize: () ->
@@ -38,7 +40,7 @@ class FormView extends HTMLElement
 
   createFieldRow: (id, type, label, options) ->
     row = document.createElement("tr")
-    row.classList.add("native-key-bindings") # workaround Atom bug
+    # row.classList.add("native-key-bindings") # workaround Atom bug
     row.appendChild @createLabel(id, label)
     row.appendChild @createField(id, type, null, options)
     row.appendChild @createProgressLabel(id) if type == "progress"
@@ -57,14 +59,15 @@ class FormView extends HTMLElement
   # {value: 123, text: "XXXX"}
   createField: (id, type, cssClass, options) ->
     td = document.createElement("td")
-    field = document.createElement("input") if type != "select" || type != "progress"
+    field = document.createElement("input") if type == "directory"
+    field = new TextEditor(id: id, mini: true) if type == "text"
     field = document.createElement("select") if type == "select"
     field = document.createElement("progress") if type == "progress"
     field.id = id
 
     @fields.push field
 
-    field.setAttribute("type", if type != "directory" then type else "text")
+    field.setAttribute("type", if type != "directory" then type else "text") if type != "text"
     field.classList.add(cssClass) if cssClass?
 
     if type == "directory"
@@ -87,7 +90,10 @@ class FormView extends HTMLElement
       field.setAttribute "value", 0
       field.setAttribute "max", 100
 
-    td.appendChild field
+    if type != "text"
+      td.appendChild field
+    else
+      td.appendChild field.getElement()
     # console.log "Created field", field, field.id
     return td
 
@@ -106,23 +112,34 @@ class FormView extends HTMLElement
 
   reset: ->
     @fields.forEach (x) ->
-      type = x.getAttribute("type")
-      x.value = "" if type in ["text","password"]
-      x.checked = false if type in ["checkbox"]
+      if x.getAttribute
+        type = x.getAttribute("type")
+      else
+        type = "text"
+      x.value = "" if type in ["password", "text"] #passwords and directory pickers
+      if type == "text" && x.setText #mini editors as text fields
+        x.setText("")
+
+      x.checked = false if type == "checkbox"
 
   setValues: (data) ->
     @reset()
     Object.keys(data).forEach (k) =>
       field = @fields.find (x) -> x.id == k
-      field?.value = data[k] if field?.getAttribute("type") in ["text","password","select"]
-      field?.checked = data[k] if field?.getAttribute("type") == "checkbox"
+      field?.value = data[k] if field?.getAttribute && field?.getAttribute("type") in ["password","select"]
+      field?.setText = data[k] if field? instanceof TextEditor
+      field?.checked = data[k] if field?.getAttribute && field?.getAttribute("type") == "checkbox"
 
   getValues: () ->
     values = {}
     @fields.forEach (x) ->
-      type = x.getAttribute("type")
+      if x.getAttribute
+        type = x.getAttribute("type")
+      else
+        type = "text"
       values[x.id] = x.value if type in ["text","password","select"]
       values[x.id] = (x.checked == true) if type == "checkbox"
+      values[x.id] = x.getText if x instanceof TextEditor
     # console.log values
     return values
 
