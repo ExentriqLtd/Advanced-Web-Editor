@@ -1,3 +1,5 @@
+{ TextEditor } = require 'atom'
+
 class FormView extends HTMLElement
 
   initialize: () ->
@@ -38,7 +40,7 @@ class FormView extends HTMLElement
 
   createFieldRow: (id, type, label, options) ->
     row = document.createElement("tr")
-    row.classList.add("native-key-bindings") # workaround Atom bug
+    # row.classList.add("native-key-bindings") if type != "minieditor" # workaround Atom bug
     row.appendChild @createLabel(id, label)
     row.appendChild @createField(id, type, null, options)
     row.appendChild @createProgressLabel(id) if type == "progress"
@@ -57,9 +59,11 @@ class FormView extends HTMLElement
   # {value: 123, text: "XXXX"}
   createField: (id, type, cssClass, options) ->
     td = document.createElement("td")
-    field = document.createElement("input") if type != "select" || type != "progress"
+    field = document.createElement("input") if type not in ["select", "progress", "minieditor"]
     field = document.createElement("select") if type == "select"
     field = document.createElement("progress") if type == "progress"
+    field = document.createElement("atom-text-editor") if type == "minieditor"
+
     field.id = id
 
     @fields.push field
@@ -87,8 +91,12 @@ class FormView extends HTMLElement
       field.setAttribute "value", 0
       field.setAttribute "max", 100
 
+    if type = "minieditor"
+      field.setAttribute("mini", "mini")
+      field.tabIndex = "0"
+
     td.appendChild field
-    # console.log "Created field", field, field.id
+    console.log "Created field", field, field.id
     return td
 
   createProgressLabel: (id) ->
@@ -109,6 +117,7 @@ class FormView extends HTMLElement
       type = x.getAttribute("type")
       x.value = "" if type in ["text","password"]
       x.checked = false if type in ["checkbox"]
+      x.getModel().setText("") if x.localName == "atom-text-editor"
 
   setValues: (data) ->
     @reset()
@@ -116,6 +125,7 @@ class FormView extends HTMLElement
       field = @fields.find (x) -> x.id == k
       field?.value = data[k] if field?.getAttribute("type") in ["text","password","select"]
       field?.checked = data[k] if field?.getAttribute("type") == "checkbox"
+      field?.getModel().setText(data[k]) if field?.getModel && field?.localName == "atom-text-editor"
 
   getValues: () ->
     values = {}
@@ -123,6 +133,8 @@ class FormView extends HTMLElement
       type = x.getAttribute("type")
       values[x.id] = x.value if type in ["text","password","select"]
       values[x.id] = (x.checked == true) if type == "checkbox"
+      # console.log x, type, x.id
+      values[x.id] = x.getModel().getText() if x.getModel && x.localName = "atom-text-editor"
     # console.log values
     return values
 

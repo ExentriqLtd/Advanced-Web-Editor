@@ -8,8 +8,8 @@ class ConfigurationFormView extends FormView
 
     @addRow @createTitleRow("Editing Tools Configuration")
     # @addRow @createFieldRow("repoUrl", "text", Configuration.labels.repoUrl)
-    @addRow @createFieldRow("fullName", "text", Configuration.labels.fullName)
-    @addRow @createFieldRow("email", "text", Configuration.labels.email)
+    @addRow @createFieldRow("fullName", "minieditor", Configuration.labels.fullName)
+    @addRow @createFieldRow("email", "minieditor", Configuration.labels.email)
     # @addRow @createFieldRow("repoOwner", "text", Configuration.labels.repoOwner)
     # @addRow @createFieldRow("username", "text", Configuration.labels.username)
     # @addRow @createFieldRow("repoUsername", "text", Configuration.labels.repoUsername)
