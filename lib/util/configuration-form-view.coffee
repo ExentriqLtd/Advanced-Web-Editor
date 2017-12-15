@@ -16,5 +16,6 @@ class ConfigurationFormView extends FormView
     # @addRow @createFieldRow("password", "password", Configuration.labels.password)
     @addRow @createFieldRow("cloneDir", "directory", Configuration.labels.cloneDir)
     # @addRow @createFieldRow("advancedMode", "checkbox", Configuration.labels.advancedMode)
+    # @forceTabIndex()
 
 module.exports = document.registerElement('awe-configuration-form-view', prototype: ConfigurationFormView.prototype, extends: 'div')

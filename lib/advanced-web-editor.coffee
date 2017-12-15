@@ -152,6 +152,7 @@ module.exports = AdvancedWebEditor =
     )
     @panel = atom.workspace.addTopPanel(item: @configurationView.getElement(), visible: false)
     @panel.show()
+    @configurationView.forceTabIndex()
 
   saveConfig: ->
     console.log "Save configuration"

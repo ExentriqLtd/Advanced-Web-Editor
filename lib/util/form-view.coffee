@@ -93,7 +93,7 @@ class FormView extends HTMLElement
 
     if type = "minieditor"
       field.setAttribute("mini", "mini")
-      field.tabIndex = "0"
+      # field.tabIndex = "0"
 
     td.appendChild field
     console.log "Created field", field, field.id
@@ -137,5 +137,10 @@ class FormView extends HTMLElement
       values[x.id] = x.getModel().getText() if x.getModel && x.localName = "atom-text-editor"
     # console.log values
     return values
+
+  forceTabIndex: () ->
+    i = 1
+    @fields.forEach (x) ->
+      x.tabIndex = i++
 
 module.exports = FormView

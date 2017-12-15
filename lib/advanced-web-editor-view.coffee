@@ -16,3 +16,6 @@ class ConfigurationView extends ButtonDecorator
 
   readConfiguration: ->
     return @form.getValues()
+
+  forceTabIndex: () ->
+    @form.forceTabIndex()
