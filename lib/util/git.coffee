@@ -145,7 +145,6 @@ callGit = (cmd, parser, nodatalog) ->
   logcb "> git #{cmd}"
 
   deferred = q.defer()
-  console.log "lock", lock
   lock.acquire "git", (callback) ->
     checkLockFileDoesntExist()
       .then () ->
