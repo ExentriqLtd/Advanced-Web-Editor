@@ -56,7 +56,35 @@ module.exports = AdvancedWebEditor =
       operations.push () ->
         q.fcall () -> atom.restartApplication()
 
-      result = operations.reduce(q.when, q(true))
+      # result = operations.reduce(q.when, q(true))
+
+      result = q(true)
+
+      attemptExecution = (f) ->
+        deferred = q.defer()
+        f()
+          .then () ->
+            console.log "Successful execution, resolve true"
+            deferred.resolve true
+          .fail (e) ->
+            console.log "Initialization step failed", e
+            atom.confirm
+              message: 'Error occurred in initialization'
+              detailedMessage: "An initialization operation produced an error:\n#{e.message}"
+              buttons:
+                Retry: ->
+                  attemptExecution(f)
+                    .then () ->
+                      deferred.resolve true
+                'Restart Atom': -> atom.restartApplication()
+        return deferred.promise
+
+      i = 0
+      operations.forEach (f) ->
+        result = result.then () ->
+          console.log "Initialization step #{++i}"
+          attemptExecution(f)
+
     else
       @handlePreStartCheck()
 

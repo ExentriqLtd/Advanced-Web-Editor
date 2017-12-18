@@ -548,15 +548,20 @@ class LifeCycle
     return @_isValidCloneTarget(node_modules_dir)
 
   initializePreviewEngine: () ->
+    deferred = q.defer()
     view = new PleaseWaitView()
     view.initialize("Initializing preview engine. Please wait...")
     modal = atom.workspace.addModalPanel(item: view, visible:true)
     @_doInitializePreviewEngine()
-    .then () ->
-      modal.destroy()
-    .fail (e) ->
-      modal.destroy()
-      atom.notifications.addError("Error occurred", description: "Error occurred during initialization", detail: e.message, dismissable: true)
+      .then () ->
+        modal.destroy()
+        deferred.resolve true
+      .fail (e) ->
+        modal.destroy()
+        # atom.notifications.addError("Error occurred", description: "Error occurred during initialization", detail: e.message, dismissable: true)
+        deferred.reject e
+
+    return deferred.promise
 
   _doInitializePreviewEngine: () ->
     cwd = @whereToClonePreviewEngine()
@@ -581,9 +586,11 @@ class LifeCycle
     exit = (code) ->
       console.log("npm exited with #{code}")
 
-      if code && code > 0
+      if code != 0
+        console.log "npm failed"
         deferred.reject message:errors.join "\n"
-      if code == 0
+      else
+        console.log "npm successful"
         deferred.resolve true
 
     options =
