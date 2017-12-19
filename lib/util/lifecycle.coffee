@@ -4,6 +4,7 @@ fs = require 'fs'
 moment = require 'moment'
 q = require 'q'
 getFolderSize = require 'get-folder-size'
+rimraf = require 'rimraf'
 
 Configuration = require './configuration'
 BitBucketManager = require './bitbucket-manager'
@@ -574,6 +575,11 @@ class LifeCycle
 
     stdout = (output) -> console.log "npm >", output
 
+    packageJson = new File(path.join(cwd, 'package.json'))
+    if !packageJson.existsSync()
+      @deleteFolderSync @whereToClonePreviewEngine()
+      atom.restartApplication()
+
     stderr = (output) ->
       stream = console.error
       if output.indexOf('WARN') > 0
@@ -598,5 +604,9 @@ class LifeCycle
     npmProcess = new BufferedProcess({command, args, options, stdout, stderr, exit})
 
     return deferred.promise
+
+  deleteFolderSync: (dir) ->
+    console.log "Deleting #{dir}"
+    rimraf.sync(dir)
 
 module.exports = LifeCycle

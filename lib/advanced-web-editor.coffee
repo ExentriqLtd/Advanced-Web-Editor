@@ -20,6 +20,7 @@ module.exports = AdvancedWebEditor =
   statusCheckInterval: -1
   editorSaveHandle: null
   editorModifyHandle: null
+  folderSizeInterval: -1
 
   consumeToolBar: (getToolBar) ->
     @toolBar = getToolBar('advanced-web-editor')
@@ -64,13 +65,15 @@ module.exports = AdvancedWebEditor =
         deferred = q.defer()
         f()
           .then () ->
-            console.log "Successful execution, resolve true"
+            # console.log "Successful execution, resolve true"
+            window.clearInterval @folderSizeInterval if @folderSizeInterval >= 0
             deferred.resolve true
           .fail (e) ->
-            console.log "Initialization step failed", e
+            # console.log "Initialization step failed", e
+            window.clearInterval @folderSizeInterval if @folderSizeInterval >= 0
             atom.confirm
               message: 'Error occurred in initialization'
-              detailedMessage: "An initialization operation produced an error:\n#{e.message}"
+              detailedMessage: "Error occurred during initialization:\n#{e.message}"
               buttons:
                 Retry: ->
                   attemptExecution(f)
@@ -212,11 +215,13 @@ module.exports = AdvancedWebEditor =
     cloneUrl = @lifeCycle.assembleCloneUrl(configuration)
     targetDir = @lifeCycle.whereToClone(cloneUrl)
 
-    folderSizeInterval = -1
+    @folderSizeInterval = -1
     repoSize = -1
     currentSize = 0
 
     isBitbucketRepo = @lifeCycle.isBitbucketRepo(cloneUrl)
+
+    @lifeCycle.deleteFolderSync targetDir
 
     return q.fcall () =>
       if isBitbucketRepo
@@ -239,20 +244,21 @@ module.exports = AdvancedWebEditor =
             repoSize = size
             promise = git.clone cloneUrl, targetDir
               .then () ->
-                window.clearInterval folderSizeInterval
+                window.clearInterval @folderSizeInterval
                 modal.destroy()
                 # atom.restartApplication()
-              .fail () =>
-                window.clearInterval folderSizeInterval
-                modal.destroy()
-                atom.confirm
-                  message: 'Error occurred'
-                  detailedMessage: "Unable to download #{cloneUrl}.\nYou may want to try again or check out your configuration."
-                  buttons:
-                    Configure: => @configure()
-                    Retry: => @doClone(configuration, message)
+              # Handle the failure and clear the interval outside
+              # .fail () =>
+              #   window.clearInterval @folderSizeInterval
+              #   modal.destroy()
+                # atom.confirm
+                #   message: 'Error occurred'
+                #   detailedMessage: "Unable to download #{cloneUrl}.\nYou may want to try again or check out your configuration."
+                #   buttons:
+                #     Configure: => @configure()
+                #     Retry: => @doClone(configuration, message)
 
-            folderSizeInterval = window.setInterval () =>
+            @folderSizeInterval = window.setInterval () =>
               @lifeCycle.getFolderSize targetDir
                 .then (size) =>
                   currentSize = size
@@ -262,15 +268,16 @@ module.exports = AdvancedWebEditor =
             , FOLDER_SIZE_INTERVAL
             return promise
 
-          .fail (e) =>
-            console.log e
-            modal?.destroy()
-            atom.confirm
-              message: 'Error occurred'
-              detailedMessage: "Unable to gather remote repository size.\nYou may want to try again or check out your configuration."
-              buttons:
-                Configure: => @configure()
-                Retry: => @doClone(configuration, message)
+          # Let it fail and be handled by retry handler
+          # .fail (e) =>
+          #   console.log e
+          #   modal?.destroy()
+          #   atom.confirm
+          #     message: 'Error occurred'
+          #     detailedMessage: "Unable to gather remote repository size.\nYou may want to try again or check out your configuration."
+          #     buttons:
+          #       Configure: => @configure()
+          #       Retry: => @doClone(configuration, message)
       else
         return git.clone cloneUrl, targetDir
 
