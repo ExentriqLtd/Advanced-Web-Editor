@@ -4,6 +4,7 @@ fs = require 'fs'
 moment = require 'moment'
 q = require 'q'
 getFolderSize = require 'get-folder-size'
+rimraf = require 'rimraf'
 
 Configuration = require './configuration'
 BitBucketManager = require './bitbucket-manager'
@@ -548,15 +549,20 @@ class LifeCycle
     return @_isValidCloneTarget(node_modules_dir)
 
   initializePreviewEngine: () ->
+    deferred = q.defer()
     view = new PleaseWaitView()
     view.initialize("Initializing preview engine. Please wait...")
     modal = atom.workspace.addModalPanel(item: view, visible:true)
     @_doInitializePreviewEngine()
-    .then () ->
-      modal.destroy()
-    .fail (e) ->
-      modal.destroy()
-      atom.notifications.addError("Error occurred", description: "Error occurred during initialization", detail: e.message, dismissable: true)
+      .then () ->
+        modal.destroy()
+        deferred.resolve true
+      .fail (e) ->
+        modal.destroy()
+        # atom.notifications.addError("Error occurred", description: "Error occurred during initialization", detail: e.message, dismissable: true)
+        deferred.reject e
+
+    return deferred.promise
 
   _doInitializePreviewEngine: () ->
     cwd = @whereToClonePreviewEngine()
@@ -568,6 +574,11 @@ class LifeCycle
     args = ["install"]
 
     stdout = (output) -> console.log "npm >", output
+
+    packageJson = new File(path.join(cwd, 'package.json'))
+    if !packageJson.existsSync()
+      @deleteFolderSync @whereToClonePreviewEngine()
+      atom.restartApplication()
 
     stderr = (output) ->
       stream = console.error
@@ -581,9 +592,11 @@ class LifeCycle
     exit = (code) ->
       console.log("npm exited with #{code}")
 
-      if code && code > 0
+      if code != 0
+        console.log "npm failed"
         deferred.reject message:errors.join "\n"
-      if code == 0
+      else
+        console.log "npm successful"
         deferred.resolve true
 
     options =
@@ -591,5 +604,9 @@ class LifeCycle
     npmProcess = new BufferedProcess({command, args, options, stdout, stderr, exit})
 
     return deferred.promise
+
+  deleteFolderSync: (dir) ->
+    console.log "Deleting #{dir}"
+    rimraf.sync(dir)
 
 module.exports = LifeCycle
