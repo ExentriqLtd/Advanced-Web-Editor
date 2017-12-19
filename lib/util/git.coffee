@@ -6,6 +6,8 @@ moment = require 'moment'
 
 git = require 'git-promise'
 q = require 'q'
+AsyncLock = require 'async-lock'
+lock = new AsyncLock()
 
 LOCK_POLL_INTERVAL = 500
 LOCK_MAX_RETRIES = 20
@@ -27,8 +29,8 @@ lockFile = () -> path.join(cwd, '.git', 'index.lock')
 lockFileExists = () ->
   if !cwd
     return false
-  lock = new File(lockFile())
-  return lock.existsSync()
+  lockF = new File(lockFile())
+  return lockF.existsSync()
 
 checkLockFileDoesntExist = () ->
   deferred = q.defer()
@@ -143,19 +145,22 @@ callGit = (cmd, parser, nodatalog) ->
   logcb "> git #{cmd}"
 
   deferred = q.defer()
-
-  checkLockFileDoesntExist()
-    .then () ->
-      git(cmd, {cwd: cwd})
-        .then (data) ->
-          logcb data unless nodatalog
-          deferred.resolve parser(data)
-        .fail (e) ->
-          logcb e.stdout, true
-          logcb e.message, true
-          deferred.reject e
-    .fail () ->
-      deferred.reject message: "Git project directory is locked. You may try to delete #{lockFile()} manually"
+  lock.acquire "git", (callback) ->
+    checkLockFileDoesntExist()
+      .then () ->
+        git(cmd, {cwd: cwd})
+          .then (data) ->
+            logcb data unless nodatalog
+            deferred.resolve parser(data)
+            callback null, true
+          .fail (e) ->
+            logcb e.stdout, true
+            logcb e.message, true
+            deferred.reject e
+            callback null, true
+      .fail () ->
+        deferred.reject message: "Git project directory is locked. You may try to delete #{lockFile()} manually"
+        callback null, true
 
   return deferred.promise
 
