@@ -2,6 +2,8 @@ ConfigurationView = require './advanced-web-editor-view'
 BranchView = require './branch-view'
 ProgressView = require './util/progress-view'
 
+sysinfo = require './util/sysinfo'
+
 {CompositeDisposable} = require 'atom'
 q = require 'q'
 
@@ -29,7 +31,7 @@ module.exports = AdvancedWebEditor =
   initialize: ->
 
   activate: (state) ->
-    console.log "AdvancedWebEditor::activate", state
+    console.log "AdvancedWebEditor::activate", state, sysinfo.gatherInfo()
 
     # Life Cycle manager handles commands and status
     @lifeCycle = new LifeCycle()
