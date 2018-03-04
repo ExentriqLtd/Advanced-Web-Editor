@@ -1,5 +1,6 @@
 os = require 'os'
 Configuration = require './configuration'
+packageName = 'adv-web-editor'
 
 gatherConfig = ->
   c = new Configuration()
@@ -9,9 +10,16 @@ gatherConfig = ->
     fullName: confData.fullName
   return ret
 
+packageVersion = ->
+  pkg = atom.packages.getLoadedPackage(packageName)
+  return pkg.metadata.version
+
 sysinfo =
   gatherInfo: ->
     data =
+      module:
+        name: packageName
+        version: packageVersion()
       os:
         type: os.type()
         arch: os.arch()
