@@ -91,7 +91,7 @@ class FormView extends HTMLElement
       field.setAttribute "value", 0
       field.setAttribute "max", 100
 
-    if type = "minieditor"
+    if type == "minieditor"
       field.setAttribute("mini", "mini")
       # field.tabIndex = "0"
 
