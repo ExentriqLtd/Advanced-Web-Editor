@@ -3,6 +3,7 @@ BranchView = require './branch-view'
 ProgressView = require './util/progress-view'
 
 sysinfo = require './util/sysinfo'
+log = require './util/logger'
 
 {CompositeDisposable} = require 'atom'
 q = require 'q'
@@ -31,7 +32,7 @@ module.exports = AdvancedWebEditor =
   initialize: ->
 
   activate: (state) ->
-    console.log "AdvancedWebEditor::activate", state, sysinfo.gatherInfo()
+    log.debug "AdvancedWebEditor::activate", state
 
     # Life Cycle manager handles commands and status
     @lifeCycle = new LifeCycle()
@@ -41,7 +42,7 @@ module.exports = AdvancedWebEditor =
 
     # Check configuration first
     if !@lifeCycle.isConfigurationValid()
-      console.log "Configuration required"
+      log.debug "Configuration required"
       @configure()
     else
       git.setProjectIndex @lifeCycle.indexOfProject()
@@ -50,7 +51,7 @@ module.exports = AdvancedWebEditor =
   init: () ->
     @lifeCycle.closeAllEditors()
     operations = @getInitialSetupOperations()
-    console.log "Initial setup operations", operations
+    log.debug "Initial setup operations", operations
     if operations.length > 0
       # operations.push(() => @handlePreStartCheck())
       # operations.push () ->
@@ -67,11 +68,11 @@ module.exports = AdvancedWebEditor =
         deferred = q.defer()
         f()
           .then () ->
-            # console.log "Successful execution, resolve true"
+            # log.debug "Successful execution, resolve true"
             window.clearInterval @folderSizeInterval if @folderSizeInterval >= 0
             deferred.resolve true
           .fail (e) ->
-            # console.log "Initialization step failed", e
+            # log.debug "Initialization step failed", e
             window.clearInterval @folderSizeInterval if @folderSizeInterval >= 0
             atom.confirm
               message: 'Error occurred in initialization'
@@ -87,14 +88,15 @@ module.exports = AdvancedWebEditor =
       i = 0
       operations.forEach (f) ->
         result = result.then () ->
-          console.log "Initialization step #{++i}"
+          log.debug "Initialization step #{++i}"
           attemptExecution(f)
 
     else
       @handlePreStartCheck()
 
   handlePreStartCheck: () ->
-    console.log "handlePreStartCheck", this
+    # log.debug "handlePreStartCheck", this
+    log.debug "handlePreStartCheck"
     return @doPreStartCheck()
       .then () =>
         @lifeCycle.setupToolbar(@toolBar)
@@ -102,7 +104,8 @@ module.exports = AdvancedWebEditor =
       .fail (e) =>
         @lifeCycle.statusReady()
         @lifeCycle.setupToolbar(@toolBar)
-        console.log "During pre start check", e
+        #TODO: add system information
+        log.error "During pre start check", e
         atom.notifications.addError "Error occurred during initialization",
           description: e.message + "\n" + e.stdout
       .done()
@@ -136,7 +139,7 @@ module.exports = AdvancedWebEditor =
 
     # Listen to project folders. In basic mode, only project folder is allowed
     @subscriptions.add atom.project.onDidChangePaths (paths) =>
-      console.log "Atom projects path changed", paths
+      log.debug "Atom projects path changed", paths
       @lifeCycle.openProjectFolder() if !@lifeCycle.isStatusInit()
       if !@lifeCycle.haveToClone()
         git.setProjectIndex @lifeCycle.indexOfProject()
@@ -150,7 +153,7 @@ module.exports = AdvancedWebEditor =
 
       if !@lifeCycle.isConfigurationValid()
         return
-      console.log "Active text editor is now", editor
+      # log.debug "Active text editor is now", editor
       if !editor
         return
       path = editor.getPath()
@@ -162,23 +165,23 @@ module.exports = AdvancedWebEditor =
           @commandStartEditing()
         else
           @editorModifyHandle = editor.onDidStopChanging () =>
-            console.log "Did stop changing"
+            log.debug "Did stop changing"
             @lifeCycle.statusStarted()
             @lifeCycle.setupToolbar @toolBar
 
   hideConfigure: ->
-    console.log 'AdvancedWebEditor hidden configuration'
+    log.debug 'AdvancedWebEditor hidden configuration'
     @panel.destroy()
     @panel = null
     @lifeCycle.reloadConfiguration() #reset configuration
 
   configure: ->
-    console.log 'AdvancedWebEditor shown configuration'
+    log.debug 'AdvancedWebEditor shown configuration'
     if @panel?
       return
 
     configuration = @lifeCycle.getConfiguration()
-    console.log "Configuration", configuration
+    log.debug "Configuration", configuration
     @configurationView = new ConfigurationView(configuration,
       () => @saveConfig(),
       () => @hideConfigure()
@@ -188,7 +191,7 @@ module.exports = AdvancedWebEditor =
     @configurationView.forceTabIndex()
 
   saveConfig: ->
-    console.log "Save configuration"
+    log.debug "Save configuration"
     confValues = @configurationView.readConfiguration()
     config = @lifeCycle.getConfiguration()
     config.setValues(confValues)
@@ -212,7 +215,7 @@ module.exports = AdvancedWebEditor =
     return value / max * 100.0
 
   doClone: (configuration, message) ->
-    # console.log "doClone", configuration
+    # log.debug "doClone", configuration
     @lifeCycle.statusInit()
 
     cloneUrl = @lifeCycle.assembleCloneUrl(configuration)
@@ -240,7 +243,7 @@ module.exports = AdvancedWebEditor =
         repoOwner = configuration.repoOwner
         repoName = @lifeCycle.getRepoName cloneUrl
 
-        # console.log repoUsername, repoPassword, repoOwner, repoName
+        # log.debug repoUsername, repoPassword, repoOwner, repoName
 
         @lifeCycle.getBitbucketRepoSize(repoUsername, repoPassword, repoOwner, repoName)
           .then (size) =>
@@ -265,7 +268,7 @@ module.exports = AdvancedWebEditor =
               @lifeCycle.getFolderSize targetDir
                 .then (size) =>
                   currentSize = size
-                  console.log "Cloning", currentSize, repoSize
+                  log.info "Cloning", currentSize, repoSize
                   progress.setProgress @percentage(currentSize, repoSize)
                 .fail () -> #maybe not yet there
             , FOLDER_SIZE_INTERVAL
@@ -287,12 +290,12 @@ module.exports = AdvancedWebEditor =
   statusCheck: () ->
     # console.log "statusCheck ->"
     if !@lifeCycle.canCheckGitStatus()
-      console.log "Status check: operations in progress. Skipping."
+      log.debug "Status check: operations in progress. Skipping."
       return
 
     q.all [@lifeCycle.checkUncommittedChanges(), @lifeCycle.checkUnpublishedChanges()]
       .then (results) =>
-        # console.log results
+        # log.debug results
         if results[0]
           @lifeCycle.statusStarted()
         else if results[1].length > 0
@@ -322,7 +325,7 @@ module.exports = AdvancedWebEditor =
     if !advancedMode
       return @answerCreateNewBranch()
 
-    console.log 'AdvancedWebEditor ask for branch'
+    log.info 'AdvancedWebEditor ask for branch'
     @lifeCycle.getYourBranches()
       .then (branches) =>
         # console.log branches
@@ -372,7 +375,7 @@ module.exports = AdvancedWebEditor =
             description: e.message + "\n" + e.stdout
 
   answerCreateNewBranch: () ->
-    console.log "Answer: create new branch"
+    log.debug "Answer: create new branch"
 
     # git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusStarted()
@@ -392,11 +395,11 @@ module.exports = AdvancedWebEditor =
         description: e.message + "\n" + e.stdout
 
   commandStartEditing: () ->
-    console.log "Command: Start Editing"
+    log.info "Command: Start Editing"
     @askForBranch()
 
   commandSaveLocally: () ->
-    console.log "Command: Save Locally"
+    log.info "Command: Save Locally"
     # git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusSaving()
     @lifeCycle.setupToolbar(@toolBar)
@@ -408,7 +411,7 @@ module.exports = AdvancedWebEditor =
         t.save()
 
     @lifeCycle.checkUncommittedChanges(true).then (hasUncommittedChanges) =>
-      console.log "Has uncommitted changes?", hasUncommittedChanges
+      log.debug "Has uncommitted changes?", hasUncommittedChanges
       if hasUncommittedChanges
         @lifeCycle.doCommit()
           .then () =>
@@ -416,7 +419,7 @@ module.exports = AdvancedWebEditor =
             @lifeCycle.setupToolbar(@toolBar)
           .fail (e) =>
             # Retry once
-            console.log("First commit failed. Retry once. Reason was", e)
+            log.warn("First commit failed. Retry once. Reason was", e)
             @lifeCycle.doCommit()
               .then () =>
                 @lifeCycle.statusSaved()
@@ -432,7 +435,7 @@ module.exports = AdvancedWebEditor =
         @lifeCycle.setupToolbar(@toolBar)
 
   commandPublish: () ->
-    console.log "Command: Publish"
+    log.info "Command: Publish"
     # git.setProjectIndex @lifeCycle.indexOfProject()
     @lifeCycle.statusPublishing()
     @lifeCycle.setupToolbar(@toolBar)
@@ -447,7 +450,8 @@ module.exports = AdvancedWebEditor =
       @lifeCycle.setupToolbar(@toolBar)
 
   doPreStartCheck: () ->
-    console.log "doPrestartCheck", this
+    # log.debug "doPrestartCheck", this
+    log.debug "doPrestartCheck"
     keepEditing = false
     deferred = q.defer()
     @lifeCycle.openProjectFolder()
@@ -470,7 +474,7 @@ module.exports = AdvancedWebEditor =
           else
             @lifeCycle.checkUnpublishedChanges(true)
               .then (unpublishedBranches) ->
-                # console.log unpublishedBranches
+                # log.debug unpublishedBranches
                 if unpublishedBranches.length > 0
                   return {
                     state: "unpublished"
@@ -482,7 +486,7 @@ module.exports = AdvancedWebEditor =
                   }
 
       promise.then (state) =>
-        console.log state
+        log.debug state
         if state.state != "ok"
           action = 'save' if state.state == 'unsaved'
           action = 'publish' if state.state == 'unpublished'
@@ -519,7 +523,8 @@ module.exports = AdvancedWebEditor =
           @statusCheck()
         deferred.resolve true
       .fail (e) =>
-        console.log e
+        #TODO: add sysinfo
+        log.error e
         @lifeCycle.statusReady()
         deferred.reject e
 
