@@ -77,6 +77,7 @@ buildTransports = () ->
 
 ld = new Directory(logDir)
 
+# TODO: what if confDir don't exist yet?
 if !dirExists logDir
   mkdirp.sync logDir
 
