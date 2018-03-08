@@ -57,9 +57,11 @@ class CustomHttpTransport extends Transport
 
 aweConf = new Configuration()
 cloneDir = aweConf.get().cloneDir
-logDir = path.join(cloneDir, 'logs')
+logDir = path.join(cloneDir, 'logs') if cloneDir?
 
 dirExists = (dir) ->
+  if !dir
+    return false
   d = new Directory(dir)
   return d.existsSync()
 
@@ -68,19 +70,17 @@ buildTransports = () ->
     new winston.transports.Console()
   ]
 
-  if dirExists(cloneDir)
+  cloneDirExists = dirExists(cloneDir)
+
+  if cloneDirExists
+    if !dirExists logDir
+      mkdirp.sync logDir
     transports.push new winston.transports.File({ filename: path.join(logDir, LOG_FILE) })
 
   if logConf.exists()
     transports.push new CustomHttpTransport({ level: 'error', endpoint: logConf.get().endpoint}),
 
   return transports
-
-ld = new Directory(logDir)
-
-# TODO: what if confDir don't exist yet?
-if !dirExists logDir
-  mkdirp.sync logDir
 
 logger = new winston.Logger
   level: 'debug',
