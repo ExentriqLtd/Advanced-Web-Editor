@@ -10,9 +10,10 @@ sysinfo = require './sysinfo'
 
 HttpLogConfiguration = require './http-log-configuration'
 Configuration = require './configuration'
+packageInfo = require '../../package.json'
 
 logConf = new HttpLogConfiguration()
-LOG_FILE = 'awe.log'
+LOG_FILE = "#{packageInfo.name}.log"
 
 class CustomHttpTransport extends Transport
   constructor: (@opts) ->
