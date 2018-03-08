@@ -2,7 +2,6 @@ ConfigurationView = require './advanced-web-editor-view'
 BranchView = require './branch-view'
 ProgressView = require './util/progress-view'
 
-sysinfo = require './util/sysinfo'
 log = require './util/logger'
 
 {CompositeDisposable} = require 'atom'
@@ -523,7 +522,6 @@ module.exports = AdvancedWebEditor =
           @statusCheck()
         deferred.resolve true
       .fail (e) =>
-        #TODO: add sysinfo
         log.error e
         @lifeCycle.statusReady()
         deferred.reject e
