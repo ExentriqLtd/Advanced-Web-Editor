@@ -2,6 +2,7 @@ API_URL = 'https://api.bitbucket.org/2.0/repositories/'
 
 request = require 'request'
 q = require 'q'
+log = require './logger'
 
 PAGE_SIZE = 50
 
@@ -26,7 +27,7 @@ transformBranchResponse = (body) ->
 class BitBucketManager
 
   constructor: (@bitBucketUsername, @bitBucketPassword) ->
-    # console.log "BitBucketManager::constructor", @bitBucketUsername, @bitBucketPassword
+    # log.debug "BitBucketManager::constructor", @bitBucketUsername, @bitBucketPassword
 
   buildAuth: () ->
     return {
@@ -44,7 +45,7 @@ class BitBucketManager
 
     request.get options, (error, response, body) ->
       try
-        console.log "_get got", url, body
+        log.debug "_get got", url, body
         if error
           deferred.reject "Error occurred, Resource #{url}"
         else if response && response.statusCode != 200
@@ -113,11 +114,11 @@ class BitBucketManager
             name: toBranch
         close_source_branch: true
 
-    console.log "BitBucketManager::createPullRequest", options
+    log.debug "BitBucketManager::createPullRequest", options
 
     request.post options, (error, response, body) ->
       try
-        console.log "API returned:", body
+        log.debug "API returned:", body
         deferred.resolve body
       catch error
         deferred.reject error
@@ -136,7 +137,7 @@ class BitBucketManager
     return deferred.promise
 
   getRepoSize: (repoOwner, repoName) ->
-    # console.log "BitBucketManager::getRepoSize", repoOwner, repoName
+    # log.debug "BitBucketManager::getRepoSize", repoOwner, repoName
     deferred = q.defer()
     url = "#{API_URL}#{repoOwner}/#{repoName}"
     options =
@@ -145,9 +146,9 @@ class BitBucketManager
       json: true
 
     request.get options, (error, response, body) ->
-      console.log options, error, response, body
+      log.debug options, error, response, body
       try
-        console.log "API returned:", body
+        log.debug "API returned:", body
         deferred.resolve body.size
       catch e
         deferred.reject e

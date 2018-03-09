@@ -12,6 +12,8 @@ HttpLogConfiguration = require './http-log-configuration'
 Configuration = require './configuration'
 packageInfo = require '../../package.json'
 
+console.log Configuration
+
 logConf = new HttpLogConfiguration()
 LOG_FILE = "#{packageInfo.name}.log"
 

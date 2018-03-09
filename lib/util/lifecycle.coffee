@@ -5,6 +5,7 @@ moment = require 'moment'
 q = require 'q'
 getFolderSize = require 'get-folder-size'
 rimraf = require 'rimraf'
+log = require './logger'
 
 Configuration = require './configuration'
 BitBucketManager = require './bitbucket-manager'
@@ -53,37 +54,37 @@ class LifeCycle
       @currentBranch = git.getCurrentBranch()
 
   statusInit: () ->
-    console.log "lifeCycle::statusInit"
+    log.debug "lifeCycle::statusInit"
     @status = STATUS.INIT
     @_stopObservingBranchSwitch()
 
   statusReady: () ->
-    console.log "lifeCycle::statusReady"
+    log.debug "lifeCycle::statusReady"
     @status = STATUS.READY
     @_stopObservingBranchSwitch()
 
   statusStarted: () ->
-    console.log "lifeCycle::statusStarted"
+    log.debug "lifeCycle::statusStarted"
     @status = STATUS.STARTED
     @_observeBranchSwitch()
 
   statusStarting: () ->
-    console.log "lifeCycle::statusStarting"
+    log.debug "lifeCycle::statusStarting"
     @status = STATUS.STARTING
     @_observeBranchSwitch()
 
   statusSaving: () ->
-    console.log "lifeCycle::statusSaving"
+    log.debug "lifeCycle::statusSaving"
     @status = STATUS.SAVING
     @_observeBranchSwitch()
 
   statusSaved: () ->
-    console.log "lifeCycle::statusSaved"
+    log.debug "lifeCycle::statusSaved"
     @status = STATUS.SAVED
     @_observeBranchSwitch()
 
   statusPublishing: () ->
-    console.log "lifeCycle::statusPublishing"
+    log.debug "lifeCycle::statusPublishing"
     @status = STATUS.PUBLISHING
     @_observeBranchSwitch()
 
@@ -106,7 +107,7 @@ class LifeCycle
 
 
   setupToolbar: (toolBar) ->
-    console.log "lifeCycle::setupToolbar"
+    log.debug "lifeCycle::setupToolbar"
 
     if ! (@startBtn && @saveBtn && @publishBtn)
       toolBar.addButton
@@ -214,7 +215,7 @@ class LifeCycle
     for d in dirs
       p = d.path
       if p == dir
-        # console.log "Index is #{i}"
+        # log.debug "Index is #{i}"
         return i
       i++
     return -1
@@ -255,11 +256,11 @@ class LifeCycle
     prm = new BitBucketManager(conf.repoUsername, conf.password)
     branch = git.getLocalBranch()
     willOpenPr = false
-    console.log "Local branch is:", branch
+    log.debug "Local branch is:", branch
 
     return prm.getPullRequests(conf.repoOwner, repoName)
       .then (pullRequests) ->
-        console.log "Pull requests", pullRequests
+        log.debug "Pull requests", pullRequests
         # Filter out branches if pull requests are pending already
         list = pullRequests.map (pr) -> pr.from
         branches = list.filter (b) -> b == branch
@@ -267,14 +268,14 @@ class LifeCycle
       .then () ->
         git.push '', ''
       .then () =>
-        console.log "Will open PR for", branch, willOpenPr
+        log.debug "Will open PR for", branch, willOpenPr
         # Open PRs for remaining branches towards branch develop
         if willOpenPr
           return @openPullRequest(prm, conf.repoOwner, repoName, branch)
         else
           return q.fcall () -> null
       .then (status) =>
-        console.log "Pull requests status", status
+        log.debug "Pull requests status", status
         #Then notify we're ready for another round
         @status = STATUS.READY
         atom.notifications.addSuccess("Changes have been published succesfully.")
@@ -292,7 +293,7 @@ class LifeCycle
         # Then: gather open pull requests
         return prm.getPullRequests(conf.repoOwner, repoName)
       .then (pullRequests) ->
-        console.log "Pull requests", pullRequests
+        log.debug "Pull requests", pullRequests
         # Filter out branches if pull requests are pending already
         list = pullRequests.map (pr) -> pr.from
         branches = branches.filter (b) -> list.length == 0 || list.indexOf(b) < 0
@@ -301,11 +302,11 @@ class LifeCycle
         #Then: push all branches
         return git.pushAll()
       .then () =>
-        console.log "Will open PR for", branches
+        log.debug "Will open PR for", branches
         # Open PRs for remaining branches towards branch develop
         return @openPullRequests(prm, branches)
       .then (status) =>
-        console.log "Pull requests status", status
+        log.debug "Pull requests status", status
         #Then notify we're ready for another round
         @status = STATUS.READY
         atom.notifications.addSuccess("Changes have been published succesfully.")
@@ -336,7 +337,7 @@ class LifeCycle
   updateDevelop: () -> @checkoutThenUpdate 'develop', true
 
   checkoutThenUpdate: (branch, doReset) ->
-    console.log "Update #{branch}"
+    log.debug "Update #{branch}"
     # git.setProjectIndex @indexOfProject()
     return git.checkout branch
       .then () ->
@@ -352,7 +353,7 @@ class LifeCycle
   getYourBranches: () ->
     conf = @configuration.get()
     username = conf["username"]
-    # console.log username
+    # log.debug username
 
     if !@isBitbucketRepo() # trust git
       return @getBranchesByUser(username).then (branches) ->
@@ -362,12 +363,12 @@ class LifeCycle
       repoName = getRepoName(conf.repoUrl)
       return bm.getBranches(conf.repoOwner, repoName)
         .then (branches) ->
-          console.log branches, username
+          log.debug branches, username
           return branches.filter (b) -> (b not in FORBIDDEN_BRANCHES) && b.indexOf("/#{username}/") >= 0
 
   getBranchesByUser: (username) ->
     return git.getBranches().then (branches) ->
-      # console.log branches
+      # log.debug branches
       branches.remote.filter (b) -> b.indexOf("/#{username}/") >= 0
 
   isBranchRemote: (branch) ->
@@ -378,11 +379,11 @@ class LifeCycle
       isLocal = branches.local
         .filter (b) -> b == branch
         .length > 0
-      console.log branches, isRemote, isLocal, branch
+      log.debug branches, isRemote, isLocal, branch
       return isRemote && !isLocal
 
   suggestNewBranchName: (dontAskBitbucket) ->
-    console.log "suggestNewBranchName"
+    log.debug "suggestNewBranchName"
     conf = @configuration.get()
     username = conf["username"]
     branches = null
@@ -393,7 +394,7 @@ class LifeCycle
       repoName = getRepoName(conf.repoUrl)
       branchesPromise = bm.getBranches(conf.repoOwner, repoName)
         .then (branches) ->
-          console.log branches, username
+          log.debug branches, username
           return branches.filter (b) -> (b not in FORBIDDEN_BRANCHES) && b.indexOf("/#{username}/") >= 0
 
     return git.fetch().then () -> branchesPromise.then (userBranches) ->
@@ -459,7 +460,7 @@ class LifeCycle
     return theUrl.indexOf '@bitbucket.org' > 0 || theUrl.indexOf 'bitbucket.org' > 0
 
   getBitbucketRepoSize: (repoUsername, repoPassword, repoOwner, repoName) ->
-    console.log "getBitbucketRepoSize", repoUsername, repoPassword, repoOwner, repoName
+    log.debug "getBitbucketRepoSize", repoUsername, repoPassword, repoOwner, repoName
     conf = @configuration.get()
     owner = if !repoOwner then conf.repoOwner else repoOwner
     name = if !repoName then getRepoName(conf.repoUrl) else repoName
@@ -469,24 +470,24 @@ class LifeCycle
     return bm.getRepoSize(owner, name)
 
   checkUncommittedChanges: (force) ->
-    console.log "checkUncommittedChanges"
+    log.debug "checkUncommittedChanges"
     if force || @canCheckGitStatus()
       # git.setProjectIndex @indexOfProject()
       if git.isCurrentBranchForbidden()
         return q.fcall () -> false
       return git.status().then (output) -> output && output.length > 0
     else
-      console.log "Cannot check at the moment. Operations in progress."
+      log.debug "Cannot check at the moment. Operations in progress."
       return q.fcall () -> false
 
   checkUnpublishedChanges: (force) ->
-    console.log "checkUnpublishedChanges"
+    log.debug "checkUnpublishedChanges"
     if force || @canCheckGitStatus()
       # git.setProjectIndex @indexOfProject()
       return git.unpushedCommits()
         .then (branches) -> branches.filter (b) -> b not in FORBIDDEN_BRANCHES
     else
-      console.log "Cannot check at the moment. Operations in progress."
+      log.debug "Cannot check at the moment. Operations in progress."
       return q.fcall () -> false
 
   isPathFromProject: (p) ->
@@ -496,26 +497,26 @@ class LifeCycle
   getRepoName: getRepoName
 
   _observeBranchSwitch: () ->
-    console.log "_observeBranchSwitch"
+    log.debug "_observeBranchSwitch"
     if @branchFileDisposable?
       return
     filePath = path.join(@whereToClone(), '.git', 'HEAD')
-    console.log "Going to observe #{filePath}"
+    log.debug "Going to observe #{filePath}"
     branchFile = new File(filePath, false)
     @branchFileDisposable = branchFile.onDidChange () =>
       branchFile.read()
         .then (content) =>
           branchName = content.replace('ref: refs/heads/', '').trim()
-          console.log "Switch happened", branchName, branchName in FORBIDDEN_BRANCHES
+          log.debug "Switch happened", branchName, branchName in FORBIDDEN_BRANCHES
           if branchName in FORBIDDEN_BRANCHES || !@configuration.get().advancedMode
-            console.log "Reverting switch to", @currentBranch
+            log.debug "Reverting switch to", @currentBranch
             git.checkout @currentBranch
           else
-            console.log "Switch permitted"
+            log.debug "Switch permitted"
             @currentBranch = branchName
 
   _stopObservingBranchSwitch: () ->
-    console.log "_stopObservingBranchSwitch"
+    log.debug "_stopObservingBranchSwitch"
     @branchFileDisposable?.dispose()
     @branchFileDisposable = null
 
@@ -573,7 +574,7 @@ class LifeCycle
     command = "npm"
     args = ["install"]
 
-    stdout = (output) -> console.log "npm >", output
+    stdout = (output) -> log.debug "npm > #{output}"
 
     packageJson = new File(path.join(cwd, 'package.json'))
     if !packageJson.existsSync()
@@ -581,22 +582,22 @@ class LifeCycle
       atom.restartApplication()
 
     stderr = (output) ->
-      stream = console.error
+      stream = log.error
       if output.indexOf('WARN') > 0
-        stream = console.log
+        stream = log.debug
       else
         errors.push output
 
-      stream "npm >", output
+      stream "npm > #{output}"
 
     exit = (code) ->
-      console.log("npm exited with #{code}")
+      log.debug("npm exited with #{code}")
 
       if code != 0
-        console.log "npm failed"
+        log.debug "npm failed"
         deferred.reject message:errors.join "\n"
       else
-        console.log "npm successful"
+        log.debug "npm successful"
         deferred.resolve true
 
     options =
@@ -606,7 +607,7 @@ class LifeCycle
     return deferred.promise
 
   deleteFolderSync: (dir) ->
-    console.log "Deleting #{dir}"
+    log.debug "Deleting #{dir}"
     rimraf.sync(dir)
 
 module.exports = LifeCycle

@@ -96,7 +96,7 @@ class FormView extends HTMLElement
       # field.tabIndex = "0"
 
     td.appendChild field
-    console.log "Created field", field, field.id
+    # console.log "Created field", field, field.id
     return td
 
   createProgressLabel: (id) ->
