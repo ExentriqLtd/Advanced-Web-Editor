@@ -15,9 +15,19 @@ packageInfo = require '../../package.json'
 logConf = new HttpLogConfiguration()
 LOG_FILE = "#{packageInfo.name}.log"
 
+class CustomConsole extends Transport
+  constructor: (@opts) ->
+    super(@opts)
+    @name = 'myconsole'
+
+  log: (level, msg, meta, callback) ->
+    console.log "[#{level.toUpperCase()}] #{msg}", meta
+    @emit('logged')
+    if callback
+      callback()
+
 class CustomHttpTransport extends Transport
   constructor: (@opts) ->
-    console.log @opts
     super(@opts)
 
   _post: (msg, meta) ->
@@ -49,7 +59,8 @@ class CustomHttpTransport extends Transport
     # setImmediate () =>
     #   @emit('logged', info)
 
-    @_post(msg, meta).then () ->
+    @_post(msg, meta).then () =>
+      @emit('logged')
       if callback
         callback()
     .catch (err) -> console.log "Unable to POST log", err
@@ -67,7 +78,7 @@ dirExists = (dir) ->
 
 buildTransports = () ->
   transports = [
-    new winston.transports.Console()
+    new CustomConsole
   ]
 
   cloneDirExists = dirExists(cloneDir)
