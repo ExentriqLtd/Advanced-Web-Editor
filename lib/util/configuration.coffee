@@ -82,7 +82,7 @@ class Configuration
     return @confFile.existsSync()
 
   read: () ->
-    console.log "AdvancedWebEditor::read", FILE_PATH
+    # console.log "AdvancedWebEditor::read", FILE_PATH
     @confFile = new File(FILE_PATH)
     if @exists()
       try
@@ -98,10 +98,10 @@ class Configuration
 
   readPreviewConf: () ->
     result = null
-    console.log "AdvancedWebEditor::readPreviewConf", PREVIEW_CONF
+    # console.log "AdvancedWebEditor::readPreviewConf", PREVIEW_CONF
     previewConf = new File(PREVIEW_CONF)
     if !previewConf.existsSync()
-      console.log "No MapR Preview configuration found"
+      # console.log "No MapR Preview configuration found"
     else
       try
         result = CSON.parseCSONFile(PREVIEW_CONF)
@@ -113,7 +113,7 @@ class Configuration
       result.repoUsername = result.username
       delete result.username
 
-    console.log "Mapr Preview Configuration", result
+    # console.log "Mapr Preview Configuration", result
     return result
 
   get: () ->
@@ -139,7 +139,7 @@ class Configuration
     return result
 
   save: () ->
-    console.log "AdvancedWebEditor::save", FILE_PATH
+    # console.log "AdvancedWebEditor::save", FILE_PATH
     s = CSON.stringify(@conf)
     #@confFile.create().then =>
     @confFile.writeSync(s)
