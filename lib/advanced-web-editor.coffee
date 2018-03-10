@@ -1,6 +1,7 @@
 ConfigurationView = require './advanced-web-editor-view'
 BranchView = require './branch-view'
 ProgressView = require './util/progress-view'
+Wizard = require './view/wizard'
 
 log = require './util/logger'
 
@@ -128,13 +129,13 @@ module.exports = AdvancedWebEditor =
     # cleaned up with a CompositeDisposable
     @subscriptions = new CompositeDisposable
 
-    # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:configure': => @configure()
 
     # Register publishing commands
     @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:start': => @commandStartEditing()
     @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:save': => @commandSaveLocally()
     @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:publish': => @commandPublish()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'advanced-web-editor:newContent': => @commandNewContent()
 
     # Listen to project folders. In basic mode, only project folder is allowed
     @subscriptions.add atom.project.onDidChangePaths (paths) =>
@@ -447,6 +448,11 @@ module.exports = AdvancedWebEditor =
         description: e.message + "\n" + e.stdout
       @lifeCycle.statusSaved()
       @lifeCycle.setupToolbar(@toolBar)
+
+  commandNewContent: ->
+    log.info "Command: New Content"
+    w = new Wizard()
+    atom.workspace.addTopPanel(item: w.element, visible: true)
 
   doPreStartCheck: () ->
     # log.debug "doPrestartCheck", this
