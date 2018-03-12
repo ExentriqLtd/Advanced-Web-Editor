@@ -2,6 +2,8 @@
 q = require 'q'
 path = require 'path'
 
+_eval = require './wizard-expr-eval'
+
 utils =
   readJson: (filePath) ->
     f = new File(filePath)
@@ -69,5 +71,7 @@ utils =
         .then (content) ->
           console.log content
           JSON.parse(content)
+
+  eval: (value) -> _eval(value)
 
 module.exports = utils

@@ -33,15 +33,7 @@ STATUS =
 elementInList = (dir, directories) ->
   return directories.find dir
 
-getRepoName = (uri) ->
-  tmp = uri.split('/')
-  name = tmp[tmp.length-1]
-  tmp = name.split('.')
-  [..., last] = tmp
-  if last is 'git'
-    name = tmp[...-1].join('.')
-  else
-    name
+getRepoName = require './get-repo-name'
 
 class LifeCycle
   currentBranch: null

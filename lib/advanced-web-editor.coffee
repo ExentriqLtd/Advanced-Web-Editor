@@ -452,7 +452,10 @@ module.exports = AdvancedWebEditor =
   commandNewContent: ->
     log.info "Command: New Content"
     w = new Wizard()
-    atom.workspace.addTopPanel(item: w.element, visible: true)
+    modalPanel = atom.workspace.addModalPanel(item: w.element, visible: true)
+    w.getEmitter().on "close", () ->
+      modalPanel.destroy()
+      w.destroy()
 
   doPreStartCheck: () ->
     # log.debug "doPrestartCheck", this

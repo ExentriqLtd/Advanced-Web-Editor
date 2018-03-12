@@ -1,5 +1,6 @@
 [{
     "title": "Blog Post",
+    "icon": "file",
     "fields": [
       {
         "id": "alias",
@@ -12,7 +13,7 @@
         "display": "Author",
         "type": "select-md",
         "options": {
-          "path": "/en/blog/author/",
+          "path": "{maprcontent}/en/blog/author/",
           "display": "title",
           "value": "title"
         },
@@ -23,7 +24,7 @@
         "display": "Category",
         "type": "select-json",
         "options": {
-          "path": "/src/main/metalsmith/json/blog_categories_all.json",
+          "path": "{mapr}/src/main/metalsmith/json/blog_categories_all.json",
           "display": "title",
           "value": "id"
         },
@@ -71,7 +72,7 @@
         "id": "publish",
         "display": "Publish Date",
         "type": "datetime",
-        "default": "< current date/time >",
+        "default": "{now}",
         "visible": true
       },
       {
@@ -85,6 +86,7 @@
   },
   {
     "title": "Award",
+    "icon": "rocket",
     "fields": [{
         "id": "alias",
         "type": "string",
@@ -120,7 +122,7 @@
         "id": "publish",
         "display": "Publish Date",
         "type": "datetime",
-        "default": "< current date/time >",
+        "default": "{now}",
         "visible": true
       },
       {
