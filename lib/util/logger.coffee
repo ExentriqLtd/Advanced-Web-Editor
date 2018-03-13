@@ -15,6 +15,8 @@ packageInfo = require '../../package.json'
 logConf = new HttpLogConfiguration()
 LOG_FILE = "#{packageInfo.name}.log"
 
+aweConf = new Configuration()
+
 class CustomConsole extends Transport
   constructor: (@opts) ->
     super(@opts)
@@ -40,7 +42,7 @@ class CustomHttpTransport extends Transport
       json:
         msg: msg
         meta: meta
-        sysinfo: sysinfo()
+        sysinfo: sysinfo(aweConf)
 
     console.log "Requesting", options
 
