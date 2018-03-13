@@ -146,6 +146,7 @@ class Configuration
     # console.log "configuration::save", @conf
 
   isValid: () ->
+    keys = Object.keys(Configuration.labels)
     allKeys = @conf && Object.keys(@conf).filter (k) ->
       keys.find (j) ->
         k == j
@@ -158,5 +159,5 @@ class Configuration
       return if res then null else rule
     .filter (x) -> x
 
-keys = Object.keys(Configuration.labels)
+# keys = Object.keys(Configuration.labels)
 module.exports = Configuration

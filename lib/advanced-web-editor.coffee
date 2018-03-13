@@ -32,7 +32,7 @@ module.exports = AdvancedWebEditor =
 
   activate: (state) ->
     log.debug "AdvancedWebEditor::activate", state
-    log.error "Not a real error, just a test"
+    # log.error "Not a real error, just a test"
 
     # Life Cycle manager handles commands and status
     @lifeCycle = new LifeCycle()
