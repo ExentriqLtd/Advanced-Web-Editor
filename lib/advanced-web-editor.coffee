@@ -162,6 +162,7 @@ module.exports = AdvancedWebEditor =
           @statusCheck()
 
         if !@lifeCycle.canOpenTextEditors()
+          @lifeCycle.closeAllEditors()
           @commandStartEditing()
         else
           @editorModifyHandle = editor.onDidStopChanging () =>
