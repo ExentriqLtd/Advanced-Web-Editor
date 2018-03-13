@@ -12,8 +12,6 @@ HttpLogConfiguration = require './http-log-configuration'
 Configuration = require './configuration'
 packageInfo = require '../../package.json'
 
-console.log Configuration
-
 logConf = new HttpLogConfiguration()
 LOG_FILE = "#{packageInfo.name}.log"
 
@@ -37,6 +35,8 @@ class CustomHttpTransport extends Transport
 
     options =
       url: @opts.endpoint
+      headers:
+        Authentication: @opts.authentication
       json:
         msg: msg
         meta: meta
@@ -45,13 +45,17 @@ class CustomHttpTransport extends Transport
     console.log "Requesting", options
 
     request.post options, (error, response, body) ->
+      # console.log body
       try
         if error
           deferred.reject msg: "Error occurred, Resource #{options.url}", err: error
         else if response && response.statusCode != 200
           deferred.reject msg: "HTTP error #{response.statusCode}, Resource #{options.url}", code: response.statusCode
         else
-          deferred.resolve body
+          if body.response == "ok"
+            deferred.resolve body
+          else
+            deferred.reject msg: "Invalid response", body:body
       catch e
         deferred.reject e
 
@@ -91,7 +95,8 @@ buildTransports = () ->
     transports.push new winston.transports.File({ filename: path.join(logDir, LOG_FILE) })
 
   if logConf.exists()
-    transports.push new CustomHttpTransport({ level: 'error', endpoint: logConf.get().endpoint}),
+    conf = logConf.get()
+    transports.push new CustomHttpTransport({ level: 'error', endpoint: conf.endpoint, authentication: conf.authentication}),
 
   return transports
 
