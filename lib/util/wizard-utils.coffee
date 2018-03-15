@@ -6,6 +6,7 @@ _eval = require './wizard-expr-eval'
 
 utils =
   readJson: (filePath) ->
+    # console.log "JSON", filePath
     f = new File(filePath)
     f.read(true)
     .then (fileContent) ->
@@ -49,28 +50,26 @@ utils =
 
     return deferred.promise
 
-  listCategories: (maprDir, categoriesFileName) ->
-    f = categoriesFileName
-    if f.startsWith '/'
-      f = categoriesFileName.substring(1)
-    pathElements = f.split '/'
-    fileName = path.join maprDir, pathElements...
-    return utils.readJson fileName
+  listCategories: (categoriesFileName, value, display) ->
+    utils.readJson categoriesFileName
+    .then (categories) -> categories.map (x) ->
+      value: x[value]
+      display: x[display]
 
-  listMarkdownMetas: (maprContentDir, subpath) ->
-    d = subpath
-    if d.startsWith '/'
-      d = subpath.substring(1)
-    pathElements = d.split '/'
-    dirName = path.join maprContentDir, pathElements...
+  listMarkdownMetas: (dirName, value, display) ->
+    # console.log(dirName, value, display)
     utils.listDirectories dirName
     .then (directories) ->
       q.all directories.map (directory) ->
         filename = path.join dirName, directory, 'index.md'
+        # console.log "Reading", filename
         utils.readFileBetweenMarkers filename, '---'
         .then (content) ->
-          console.log content
+          # console.log content
           JSON.parse(content)
+    .then (metas) -> metas.map (x) ->
+      value: x[value]
+      display: x[display]
 
   eval: (value) -> _eval(value)
 

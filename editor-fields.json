@@ -11,8 +11,9 @@
       {
         "id": "authorDisplayName",
         "display": "Author",
-        "type": "select-md",
+        "type": "select",
         "options": {
+          "strategy": "mdmeta",
           "path": "{maprcontent}/en/blog/author/",
           "display": "title",
           "value": "title"
@@ -22,11 +23,12 @@
       {
         "id": "category",
         "display": "Category",
-        "type": "select-json",
+        "type": "select",
         "options": {
+          "strategy": "json",
           "path": "{mapr}/src/main/metalsmith/json/blog_categories_all.json",
           "display": "title",
-          "value": "id"
+          "value": "ID"
         },
         "visible": true
       },
