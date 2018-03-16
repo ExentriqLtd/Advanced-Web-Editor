@@ -1,6 +1,8 @@
 {File, Directory} = require 'atom'
 q = require 'q'
 path = require 'path'
+readline = require('readline')
+fs = require('fs')
 
 _eval = require './wizard-expr-eval'
 
@@ -16,23 +18,32 @@ utils =
     deferred = q.defer()
     buffer = ""
     markers = 0
-    lineReader = require('readline').createInterface
-      input: require('fs').createReadStream(filePath)
 
-    lineReader.on 'line', (line) ->
-      if line == marker
-        markers++
-        return
+    fs.access filePath, (err) ->
+      if err
+        deferred.resolve null
+      else
+        lineReader = readline.createInterface
+          input: fs.createReadStream(filePath)
 
-      if markers > 1
-        lineReader.close()
+        lineReader.on 'line', (line) ->
+          if line == marker
+            markers++
+            return
 
-      if markers == 1
-        buffer += line
-        buffer += "\n"
+          if markers > 1
+            lineReader.close()
 
-    lineReader.on 'close', () ->
-      deferred.resolve buffer
+          if markers == 1
+            buffer += line
+            buffer += "\n"
+
+        lineReader.on 'error', (error) ->
+          console.error "During readFileBetweenMarkers", error
+          deferred.resolve null
+
+        lineReader.on 'close', () ->
+          deferred.resolve buffer
 
     return deferred.promise
 
@@ -52,9 +63,16 @@ utils =
 
   listCategories: (categoriesFileName, value, display) ->
     utils.readJson categoriesFileName
-    .then (categories) -> categories.map (x) ->
-      value: x[value]
-      display: x[display]
+    .then (categories) ->
+      if !categories
+        return []
+
+      return categories.map (x) ->
+        value: x[value]
+        display: x[display]
+    .catch (error) ->
+      console.error "During listCategories", error
+      return []
 
   listMarkdownMetas: (dirName, value, display) ->
     # console.log(dirName, value, display)
@@ -66,10 +84,19 @@ utils =
         utils.readFileBetweenMarkers filename, '---'
         .then (content) ->
           # console.log content
-          JSON.parse(content)
-    .then (metas) -> metas.map (x) ->
-      value: x[value]
-      display: x[display]
+          try
+            return JSON.parse(content)
+          catch error
+            console.error "Parsing metadata", error
+            return null
+        .fail () ->
+          return null
+    .then (metas) ->
+      # console.log metas, metas.length, metas.filter((x) -> x).length
+      return metas.filter((x) -> x != null)
+      .map (x) ->
+        value: x[value]
+        display: x[display]
 
   eval: (value) -> _eval(value)
 
