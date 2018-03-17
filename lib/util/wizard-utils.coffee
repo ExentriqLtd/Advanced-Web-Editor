@@ -47,6 +47,12 @@ utils =
 
     return deferred.promise
 
+  listDirectoriesSync: (dirPath) ->
+    d = new Directory(dirPath)
+    return d.getEntriesSync()
+    .filter (e) -> e instanceof Directory
+    .map (x) -> x.getBaseName()
+
   listDirectories: (dirPath) ->
     deferred = q.defer()
     d = new Directory(dirPath)
