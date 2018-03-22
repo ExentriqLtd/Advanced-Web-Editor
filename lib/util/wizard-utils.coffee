@@ -3,6 +3,7 @@ q = require 'q'
 path = require 'path'
 readline = require('readline')
 fs = require('fs')
+sanitize = require('sanitize-filename')
 
 _eval = require './wizard-expr-eval'
 
@@ -66,6 +67,17 @@ utils =
         deferred.resolve result
 
     return deferred.promise
+
+  dirExists: (dirPath) ->
+    d = new Directory(dirPath)
+    return d.exists()
+
+  dirExistsSync: (dirPath) ->
+    d = new Directory(dirPath)
+    return d.existsSync()
+
+  titleToDirectoryName: (title) ->
+    return sanitize(title).replace(/\s/g, '-')
 
   listCategories: (categoriesFileName, value, display) ->
     utils.readJson categoriesFileName
