@@ -4,6 +4,7 @@ path = require 'path'
 readline = require('readline')
 fs = require('fs')
 sanitize = require('sanitize-filename')
+mkdirp = require('mkdirp')
 
 _eval = require './wizard-expr-eval'
 
@@ -78,6 +79,26 @@ utils =
 
   titleToDirectoryName: (title) ->
     return sanitize(title).replace(/\s/g, '-')
+
+  uniqueContentFolder: (rootFolder, title) ->
+    # console.log "uniqueContentFolder", rootFolder, title
+    sanitizedTitle = utils.titleToDirectoryName title
+    dir = path.join(rootFolder, sanitizedTitle)
+
+    i = 0
+    while(utils.dirExistsSync dir)
+      dir = path.join(rootFolder, sanitizedTitle + "#{++i}")
+    return dir
+
+  generateContent: (values, targetFolder) ->
+    # console.log "generateContent", values, targetFolder
+    outname = path.join(targetFolder, 'index.md')
+    mkdirp.sync(targetFolder)
+
+    #generate index.md with metadata
+    indexContents = "---\n#{JSON.stringify(values, undefined, 3)}\n---\n\n"
+    fs.writeFileSync(outname, indexContents)
+    return outname
 
   listCategories: (categoriesFileName, value, display) ->
     utils.readJson categoriesFileName

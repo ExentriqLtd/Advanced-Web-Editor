@@ -454,7 +454,12 @@ module.exports = AdvancedWebEditor =
     log.info "Command: New Content"
     w = new Wizard()
     modalPanel = atom.workspace.addModalPanel(item: w.element, visible: true)
-    w.getEmitter().on "close", () ->
+    emitter = w.getEmitter()
+    emitter.on "close", () ->
+      modalPanel.destroy()
+      w.destroy()
+    emitter.on "complete", (response) ->
+      atom.open(pathsToOpen: [response.index], newWindow: false)
       modalPanel.destroy()
       w.destroy()
 
