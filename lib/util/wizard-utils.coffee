@@ -78,7 +78,12 @@ utils =
     return d.existsSync()
 
   titleToDirectoryName: (title) ->
-    return sanitize(title).replace(/\s/g, '-')
+    return utils.removePunctuation(sanitize(title).toLowerCase())
+
+  removePunctuation: (value) ->
+    return value.replace(/\s/g, '-').replace(/\'/g, '').replace(/,/g, '')
+    .replace(/\./g, '').replace(/;/g, '').replace(/:/g, '').replace(/\?/g, '')
+    .replace(/!/g, '')
 
   uniqueContentFolder: (rootFolder, title) ->
     # console.log "uniqueContentFolder", rootFolder, title

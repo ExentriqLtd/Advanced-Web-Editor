@@ -459,6 +459,7 @@ module.exports = AdvancedWebEditor =
       modalPanel.destroy()
       w.destroy()
     emitter.on "complete", (response) ->
+      atom.notifications.addInfo "Content created. You can now edit #{response.index}."
       atom.open(pathsToOpen: [response.index], newWindow: false)
       modalPanel.destroy()
       w.destroy()
