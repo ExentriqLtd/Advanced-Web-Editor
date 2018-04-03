@@ -112,8 +112,8 @@ utils =
         return []
 
       return categories.map (x) ->
-        value: x[value]
-        display: x[display]
+        value: utils.readObject(value, x)
+        display: utils.readObject(display, x)
     .catch (error) ->
       console.error "During listCategories", error
       return []
@@ -143,5 +143,15 @@ utils =
         display: x[display]
 
   eval: (value) -> _eval(value)
+
+  readObject: (key, object) ->
+    keyParts = key.split('.')
+    res = object
+    for k in keyParts
+      if !res.hasOwnProperty(k)
+        res = undefined
+        break
+      res = res[k]
+    return res
 
 module.exports = utils

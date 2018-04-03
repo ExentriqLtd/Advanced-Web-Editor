@@ -26,8 +26,8 @@
         "type": "select",
         "options": {
           "strategy": "json",
-          "path": "{mapr}/src/main/metalsmith/json/blog_categories_all.json",
-          "display": "title",
+          "path": "{mapr}/src/main/metalsmith/json/blog_categories.json",
+          "display": "locales.en.title",
           "value": "ID"
         },
         "visible": true
