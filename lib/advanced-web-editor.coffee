@@ -167,18 +167,18 @@ module.exports = AdvancedWebEditor =
           @commandStartEditing()
         else
           @editorModifyHandle = editor.onDidStopChanging () =>
-            log.debug "Did stop changing"
+            # log.debug "Did stop changing"
             @lifeCycle.statusStarted()
             @lifeCycle.setupToolbar @toolBar
 
   hideConfigure: ->
-    log.debug 'AdvancedWebEditor hidden configuration'
+    # log.debug 'AdvancedWebEditor hidden configuration'
     @panel.destroy()
     @panel = null
     @lifeCycle.reloadConfiguration() #reset configuration
 
   configure: ->
-    log.debug 'AdvancedWebEditor shown configuration'
+    # log.debug 'AdvancedWebEditor shown configuration'
     if @panel?
       return
 
@@ -368,13 +368,14 @@ module.exports = AdvancedWebEditor =
           @branchView?.destroy()
           @branchView = null
         .fail (error) ->
+          log.error "During checkout", error
           @modalPanel?.hide()
           @modalPanel?.destroy()
           @modalPanel = null
           @branchView?.destroy()
           @branchView = null
           atom.notifications.addError "Error occurred",
-            description: e.message + "\n" + e.stdout
+            description: error.message + "\n" + error.stdout
 
   answerCreateNewBranch: () ->
     log.debug "Answer: create new branch"

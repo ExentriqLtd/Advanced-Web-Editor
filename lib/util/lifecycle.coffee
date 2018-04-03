@@ -141,9 +141,10 @@ class LifeCycle
     @startBtn.setEnabled @status == STATUS.READY
     @saveBtn.setEnabled @status == STATUS.STARTED
     @publishBtn.setEnabled @status == STATUS.SAVED
-    # TODO: restore
-    #@newBtn.setEnabled @status >= STATUS.STARTED
-    @newBtn.setEnabled @status >= STATUS.INIT
+    @newBtn.setEnabled @status >= STATUS.STARTED
+    
+    # For testing purposes only
+    # @newBtn.setEnabled @status >= STATUS.INIT
 
   getConfiguration: () ->
     return @configuration
