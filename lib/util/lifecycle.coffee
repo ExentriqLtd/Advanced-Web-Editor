@@ -33,15 +33,7 @@ STATUS =
 elementInList = (dir, directories) ->
   return directories.find dir
 
-getRepoName = (uri) ->
-  tmp = uri.split('/')
-  name = tmp[tmp.length-1]
-  tmp = name.split('.')
-  [..., last] = tmp
-  if last is 'git'
-    name = tmp[...-1].join('.')
-  else
-    name
+getRepoName = require './get-repo-name'
 
 class LifeCycle
   currentBranch: null
@@ -105,26 +97,32 @@ class LifeCycle
     if fs.existsSync(theLock)
       fs.unlinkSync(theLock)
 
-
   setupToolbar: (toolBar) ->
     log.debug "lifeCycle::setupToolbar"
 
-    if ! (@startBtn && @saveBtn && @publishBtn)
+    if ! (@startBtn && @saveBtn && @publishBtn && @newBtn)
       toolBar.addButton
         icon: 'gear',
         callback: 'advanced-web-editor:configure',
         tooltip: 'Configure'
         label: 'Config'
-        priority: 86
+        priority: 85
 
       toolBar.addSpacer
-        priority: 87
+        priority: 86
 
       @startBtn = toolBar.addButton
         icon: 'zap',
         callback: 'advanced-web-editor:start',
         tooltip: 'Start Editing'
         label: 'Edit'
+        priority: 87
+
+      @newBtn = toolBar.addButton
+        icon: 'plus',
+        callback: 'advanced-web-editor:newContent',
+        tooltip: 'New content wizard'
+        label: 'New'
         priority: 88
 
       @saveBtn = toolBar.addButton
@@ -143,6 +141,9 @@ class LifeCycle
     @startBtn.setEnabled @status == STATUS.READY
     @saveBtn.setEnabled @status == STATUS.STARTED
     @publishBtn.setEnabled @status == STATUS.SAVED
+    # TODO: restore
+    #@newBtn.setEnabled @status >= STATUS.STARTED
+    @newBtn.setEnabled @status >= STATUS.INIT
 
   getConfiguration: () ->
     return @configuration

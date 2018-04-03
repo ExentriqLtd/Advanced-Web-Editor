@@ -1,0 +1,146 @@
+[{
+    "title": "Blog Post",
+    "icon": "file",
+    "fields": [
+      {
+        "id": "alias",
+        "type": "string",
+        "default": "[]",
+        "visible": false
+      },
+      {
+        "id": "authorDisplayName",
+        "display": "Author",
+        "type": "select",
+        "options": {
+          "strategy": "mdmeta",
+          "path": "{maprcontent}/en/blog/author/",
+          "display": "title",
+          "value": "title"
+        },
+        "visible": true
+      },
+      {
+        "id": "category",
+        "display": "Category",
+        "type": "select",
+        "options": {
+          "strategy": "json",
+          "path": "{mapr}/src/main/metalsmith/json/blog_categories_all.json",
+          "display": "title",
+          "value": "ID"
+        },
+        "visible": true
+      },
+      {
+        "id": "collection",
+        "type": "string",
+        "default": "blog",
+        "visible": false
+      },
+      {
+        "id": "disqus",
+        "type": "object",
+        "default": {
+          "developer": 1,
+          "domain": "maprblog",
+          "identifier": "lowercase-title-with-dashes-special-chars-removed",
+          "status": true,
+          "title": "< value from the 'title' field >",
+          "url": "https://mapr.com/blog/lowercase-title-with-dashes-special-chars-removed/"
+        },
+        "visible": false
+      },
+      {
+        "id": "featuredImage",
+        "display": "Image",
+        "type": "file",
+        "default": "",
+        "visible": true
+      },
+      {
+        "id": "layout",
+        "type": "string",
+        "default": "blog-item.html",
+        "visible": false
+      },
+      {
+        "id": "locale",
+        "type": "string",
+        "default": "en",
+        "visible": false
+      },
+      {
+        "id": "publish",
+        "display": "Publish Date",
+        "type": "datetime",
+        "default": "{now}",
+        "visible": true
+      },
+      {
+        "id": "title",
+        "display": "Title",
+        "type": "string",
+        "default": "",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "title": "Award",
+    "icon": "rocket",
+    "fields": [{
+        "id": "alias",
+        "type": "string",
+        "default": "[]",
+        "visible": false
+      },
+      {
+        "id": "collection",
+        "type": "string",
+        "default": "award",
+        "visible": false
+      },
+      {
+        "id": "featuredImage",
+        "display": "Image",
+        "type": "file",
+        "default": "",
+        "visible": true
+      },
+      {
+        "id": "layout",
+        "type": "string",
+        "default": "default-layout.html",
+        "visible": false
+      },
+      {
+        "id": "locale",
+        "type": "string",
+        "default": "en",
+        "visible": false
+      },
+      {
+        "id": "publish",
+        "display": "Publish Date",
+        "type": "datetime",
+        "default": "{now}",
+        "visible": true
+      },
+      {
+        "id": "sourceUrl",
+        "display": "Source URL",
+        "type": "string",
+        "default": "",
+        "visible": true
+      },
+      {
+        "id": "title",
+        "display": "Title",
+        "type": "string",
+        "default": "",
+        "visible": true
+      }
+    ]
+  }
+]

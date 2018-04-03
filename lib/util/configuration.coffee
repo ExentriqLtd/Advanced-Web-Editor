@@ -6,15 +6,7 @@ path = require 'path'
 FILE_PATH = path.join(app.getPath("userData"), "adv-web-editor.cson")
 PREVIEW_CONF = path.join(app.getPath("userData"), "mapr-preview.cson")
 
-getRepoName = (uri) ->
-  tmp = uri.split('/')
-  name = tmp[tmp.length-1]
-  tmp = name.split('.')
-  [..., last] = tmp
-  if last is 'git'
-    name = tmp[...-1].join('.')
-  else
-    name
+getRepoName = require './get-repo-name'
 
 class Configuration
   @labels:
@@ -158,6 +150,17 @@ class Configuration
       res = Configuration.validationRules[rule](@conf[rule])
       return if res then null else rule
     .filter (x) -> x
+
+  whereToClone: () ->
+    repoName = getRepoName @conf["repoUrl"]
+    return path.join(@conf["cloneDir"], repoName)
+
+  whereToClonePreviewEngine: () ->
+    previewConf = @readPreviewConf()
+    cloneDir = @conf["cloneDir"]
+    repoUrl = previewConf["repoUrl"]
+    repoName = getRepoName repoUrl
+    return path.join(cloneDir, repoName)
 
 # keys = Object.keys(Configuration.labels)
 module.exports = Configuration
