@@ -71,15 +71,20 @@ class FormView extends HTMLElement
     field.setAttribute("type", if type != "directory" then type else "text")
     field.classList.add(cssClass) if cssClass?
 
+    if type == "text"
+      field.classList.add("input-text")
+
     if type == "directory"
       field.setAttribute "readonly", true
       field.addEventListener "click", () ->
         atom.pickFolder (folder) ->
           if(folder)
             field.value = folder
+      field.classList.add("input-text")
 
     if type == "select"
       # console.log "Adding options"
+      field.classList.add("input-select")
       options.forEach (option) ->
         # console.log "Adding option", option
         opt = document.createElement("option")
@@ -102,6 +107,7 @@ class FormView extends HTMLElement
   createProgressLabel: (id) ->
     td = document.createElement("td")
     label = document.createElement("label")
+    label.classList.add("input-label")
     label.id = "#{id}_label"
     label.innerText = @formatProgress(0)
     @fields.push label

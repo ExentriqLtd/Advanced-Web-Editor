@@ -9,6 +9,7 @@ class ButtonDecorator
     @element.appendChild document.createElement('hr')
     buttonsDiv = document.createElement('div')
     buttonsDiv.classList.add("awe-buttons")
+    buttonsDiv.classList.add("block")
 
     buttons.forEach (b) =>
       buttonsDiv.appendChild @createButton(b.label, b.callback)
@@ -19,6 +20,8 @@ class ButtonDecorator
     @button = document.createElement('input')
     @button.setAttribute("type", "button")
     @button.classList.add("awe-button")
+    @button.classList.add("inline-block")
+    @button.classList.add("btn")
     @button.value = label
     @button.addEventListener "click", callback if callback?
     return @button
