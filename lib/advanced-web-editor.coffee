@@ -2,6 +2,7 @@ ConfigurationView = require './advanced-web-editor-view'
 BranchView = require './branch-view'
 ProgressView = require './util/progress-view'
 Wizard = require './view/wizard'
+LoadingScreen = require './view/loading-screen'
 
 log = require './util/logger'
 
@@ -353,6 +354,11 @@ module.exports = AdvancedWebEditor =
       branch = "origin/" + branch if isRemote
 
       # git.setProjectIndex @lifeCycle.indexOfProject()
+      loading = new LoadingScreen(message: "Checking out branch #{branch}, please wait")
+      modal = atom.workspace.addModalPanel
+        item: loading.element
+        visible: true
+
       git.checkout(branch, isRemote)
         .then ->
           if !isRemote
@@ -367,6 +373,7 @@ module.exports = AdvancedWebEditor =
           @modalPanel = null
           @branchView?.destroy()
           @branchView = null
+          modal.destroy()
         .fail (error) ->
           log.error "During checkout", error
           @modalPanel?.hide()
@@ -374,6 +381,7 @@ module.exports = AdvancedWebEditor =
           @modalPanel = null
           @branchView?.destroy()
           @branchView = null
+          modal.destroy()
           atom.notifications.addError "Error occurred",
             description: error.message + "\n" + error.stdout
           @lifeCycle.statusReady()
@@ -389,14 +397,22 @@ module.exports = AdvancedWebEditor =
     @modalPanel = null
     @branchView?.destroy()
     @branchView = null
+
+    loading = new LoadingScreen(message: "Checking out a new branch, please wait")
+    modal = atom.workspace.addModalPanel
+      item: loading.element
+      visible: true
+
     @lifeCycle.setupToolbar(@toolBar)
     @lifeCycle.newBranchThenSwitch()
       .then (branch) =>
         @lifeCycle.currentBranch = branch
         @lifeCycle.statusStarted()
         @lifeCycle.setupToolbar(@toolBar)
+        modal.destroy()
         atom.notifications.addInfo("Created branch #{branch}")
       .fail (e) ->
+        modal.destroy()
         atom.notifications.addError "Error occurred",
           description: e.message + "\n" + e.stdout
         @lifeCycle.statusReady()

@@ -14,7 +14,7 @@ PleaseWaitView = require './please-wait-view'
 
 { Directory, File, BufferedProcess } = require 'atom'
 
-branchRegex = /origin\/feature\/(\d+)\/(\w+)\/(\d+)/
+branchRegex = /(origin\/)?feature\/(\d+)\/(\w+)\/(\d+)/
 TODAY_FORMAT = "MMM D YYYY - HH:mm"
 FORBIDDEN_BRANCHES = ["master", "develop"]
 STATUS =
@@ -370,8 +370,9 @@ class LifeCycle
 
   getBranchesByUser: (username) ->
     return git.getBranches().then (branches) ->
-      # log.debug branches
-      branches.remote.filter (b) -> b.indexOf("/#{username}/") >= 0
+      # console.log "getBranchesByUser", branches
+      foundBranches = branches.local.concat(branches.remote)
+      foundBranches.filter (b) -> b.indexOf("/#{username}/") >= 0
 
   isBranchRemote: (branch) ->
     return git.getBranches().then (branches) ->
@@ -394,16 +395,15 @@ class LifeCycle
     else
       bm = new BitBucketManager(conf.repoUsername, conf.password)
       repoName = getRepoName(conf.repoUrl)
-      branchesPromise = bm.getBranches(conf.repoOwner, repoName)
+      branchesPromise = bm.getBranchesByUser(conf.repoOwner, repoName, username)
         .then (branches) ->
-          log.debug branches, username
-          return branches.filter (b) -> (b not in FORBIDDEN_BRANCHES) && b.indexOf("/#{username}/") >= 0
+          return branches.filter (b) -> (b not in FORBIDDEN_BRANCHES) #&& b.indexOf("/#{username}/") >= 0
 
     return git.fetch().then () -> branchesPromise.then (userBranches) ->
       months = userBranches
         .map (b) ->
           m = b.match branchRegex
-          return if m? then Number.parseInt(m[1]) else undefined #month
+          return if m? then Number.parseInt(m[2]) else undefined #month
         .filter (x) -> x
 
       now = moment()
@@ -428,10 +428,11 @@ class LifeCycle
 
       # retain only maxMonth branch and pick maximum
       numbers = userBranches
-        .filter (b) -> b.indexOf('/' + maxMonth + '/') >= 0
+        .filter (b) ->
+          return b.indexOf('/' + maxMonth + '/') >= 0
         .map (b) ->
           n = b.match branchRegex
-          return if n? then Number.parseInt(n[3]) else undefined # final number
+          return if n? then Number.parseInt(n[4]) else undefined # final number
         .filter (x) -> x
 
       max = chooseMax(numbers, 0)
