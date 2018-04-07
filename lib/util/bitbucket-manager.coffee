@@ -57,9 +57,9 @@ class BitBucketManager
 
     return deferred.promise
 
-  invokeTillHasNext: (url, transformFunction) ->
+  invokeTillHasNext: (url, transformFunction, otherParams) ->
     deferred = q.defer()
-    location= "#{url}?pagelen=#{PAGE_SIZE}"
+    location= "#{url}?#{if otherParams then otherParams else ''}&pagelen=#{PAGE_SIZE}"
 
     #First invocation to know how many items we have
     @_get(location)
@@ -130,6 +130,18 @@ class BitBucketManager
     url = "#{API_URL}#{repoOwner}/#{repoName}/refs/branches"
 
     @invokeTillHasNext(url, transformBranchResponse).then (result) ->
+      deferred.resolve result
+    .fail (error) ->
+      deferred.reject error
+
+    return deferred.promise
+
+  getUserBranches: (repoOwner, repoName, username) ->
+    #q=name ~ "/$USERNAME/"
+    deferred = q.defer()
+    url = "#{API_URL}#{repoOwner}/#{repoName}/refs/branches"
+
+    @invokeTillHasNext(url, transformBranchResponse, "q=name+~+%22%2F#{username}%2F%22").then (result) ->
       deferred.resolve result
     .fail (error) ->
       deferred.reject error

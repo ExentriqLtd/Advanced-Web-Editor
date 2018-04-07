@@ -376,6 +376,8 @@ module.exports = AdvancedWebEditor =
           @branchView = null
           atom.notifications.addError "Error occurred",
             description: error.message + "\n" + error.stdout
+          @lifeCycle.statusReady()
+          @lifeCycle.setupToolbar(@toolBar)
 
   answerCreateNewBranch: () ->
     log.debug "Answer: create new branch"
@@ -394,11 +396,16 @@ module.exports = AdvancedWebEditor =
         @lifeCycle.statusStarted()
         @lifeCycle.setupToolbar(@toolBar)
         atom.notifications.addInfo("Created branch #{branch}")
-      .fail (e) -> atom.notifications.addError "Error occurred",
-        description: e.message + "\n" + e.stdout
+      .fail (e) ->
+        atom.notifications.addError "Error occurred",
+          description: e.message + "\n" + e.stdout
+        @lifeCycle.statusReady()
+        @lifeCycle.setupToolbar(@toolBar)
 
   commandStartEditing: () ->
     log.info "Command: Start Editing"
+    @lifeCycle.statusStarting()
+    @lifeCycle.setupToolbar(@toolBar)
     @askForBranch()
 
   commandSaveLocally: () ->

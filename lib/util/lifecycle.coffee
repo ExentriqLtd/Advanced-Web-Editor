@@ -142,7 +142,7 @@ class LifeCycle
     @saveBtn.setEnabled @status == STATUS.STARTED
     @publishBtn.setEnabled @status == STATUS.SAVED
     @newBtn.setEnabled @status >= STATUS.STARTED
-    
+
     # For testing purposes only
     # @newBtn.setEnabled @status >= STATUS.INIT
 
@@ -363,7 +363,7 @@ class LifeCycle
     else #ask API
       bm = new BitBucketManager(conf.repoUsername, conf.password)
       repoName = getRepoName(conf.repoUrl)
-      return bm.getBranches(conf.repoOwner, repoName)
+      return bm.getUserBranches(conf.repoOwner, repoName, conf.username)
         .then (branches) ->
           log.debug branches, username
           return branches.filter (b) -> (b not in FORBIDDEN_BRANCHES) && b.indexOf("/#{username}/") >= 0
